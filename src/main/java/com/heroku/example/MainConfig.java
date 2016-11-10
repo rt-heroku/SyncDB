@@ -14,18 +14,25 @@ public class MainConfig {
 
     @Bean
     public BasicDataSource dataSource() throws URISyntaxException {
-        URI dbUri = new URI(System.getenv("DATABASE_URL"));
-
-        String username = dbUri.getUserInfo().split(":")[0];
-        String password = dbUri.getUserInfo().split(":")[1];
-        String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath() + "?sslmode=require";
-
-        System.out.println("dbUrl = [" + dbUrl + "]");
-
+        String dbUrl = System.getenv("JDBC_DATABASE_URL");
         BasicDataSource basicDataSource = new BasicDataSource();
+
+        if (dbUrl == null || dbUrl.equals("")){
+
+            URI dbUri = new URI(System.getenv("DATABASE_URL"));
+
+            String username = dbUri.getUserInfo().split(":")[0];
+            String password = dbUri.getUserInfo().split(":")[1];
+            dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath() + "?sslmode=require";
+
+            basicDataSource.setUsername(username);
+            basicDataSource.setPassword(password);
+
+        }
+        else 
+            System.out.println("using JDBC -- dbUrl = [" + dbUrl + "]");
+        
         basicDataSource.setUrl(dbUrl);
-        basicDataSource.setUsername(username);
-        basicDataSource.setPassword(password);
 
         return basicDataSource;
     }
