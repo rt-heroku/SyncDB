@@ -31,7 +31,7 @@ public class MainConfig {
         }
         else 
             System.out.println("using JDBC -- dbUrl = [" + dbUrl + "]");
-        
+
         basicDataSource.setUrl(dbUrl);
 
         return basicDataSource;

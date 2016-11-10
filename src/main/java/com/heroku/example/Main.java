@@ -28,6 +28,10 @@ public class Main {
         while (rs.next()) {
             System.out.println("Read from DB: " + rs.getTimestamp("tick"));
         }
+        stmt.executeUpdate("DROP TABLE IF EXISTS ticks");
+
+        rs.close();
+        stmt.close();
     }
 
 }
