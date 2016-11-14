@@ -39,22 +39,32 @@ public class Main {
 	}
     
     private static Connection getSourceConnection() throws URISyntaxException, SQLException {
-        URI dbUri = new URI(System.getenv("JDBC_DATABASE_URL"));
+    	String url = System.getenv("JDBC_DATABASE_URL") + "";
+        URI dbUri = new URI(System.getenv("DATABASE_URL"));
 
         String username = dbUri.getUserInfo().split(":")[0];
         String password = dbUri.getUserInfo().split(":")[1];
         String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
 
-        return DriverManager.getConnection(dbUrl, username, password);
+        if (url.equals(""))
+        	return DriverManager.getConnection(dbUrl, username, password);
+        else
+        	return DriverManager.getConnection(url);
+        
     }
 
     private static Connection getTargetConnection() throws URISyntaxException, SQLException {
-        URI dbUri = new URI(System.getenv("JDBC_DATABASE_URL"));
+    	String url = System.getenv("HEROKU_POSTGRESQL_AMBER_JDBC_URL") + "";
+        URI dbUri = new URI(System.getenv("HEROKU_POSTGRESQL_AMBER_URL"));
 
         String username = dbUri.getUserInfo().split(":")[0];
         String password = dbUri.getUserInfo().split(":")[1];
         String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
 
-        return DriverManager.getConnection(dbUrl, username, password);
+        if (url.equals(""))
+        	return DriverManager.getConnection(dbUrl, username, password);
+        else
+        	return DriverManager.getConnection(url);
+        
     }
 }
