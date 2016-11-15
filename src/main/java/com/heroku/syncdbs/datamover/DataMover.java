@@ -80,9 +80,13 @@ public class DataMover {
 			System.out.println("source: " + sql);
 			target.execute(sql);
 		}
-
+		
+		System.out.println("CREATING TABLE " + table);
 		// now create the table
 		sql = source.generateCreate(table);
+		
+		System.out.println("DEBUG - " + sql);
+		
 		target.execute(sql);
 	}
 
