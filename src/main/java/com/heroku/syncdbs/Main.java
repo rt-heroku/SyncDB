@@ -42,8 +42,6 @@ public class Main {
 			
 			mover.copyTableData("servicesrule");
 			
-			mover.exportDatabse();
-
 			source.close();
 			target.close();
 
