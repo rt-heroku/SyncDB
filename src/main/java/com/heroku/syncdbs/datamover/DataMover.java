@@ -77,6 +77,7 @@ public class DataMover {
 		// if the table already exists, then drop it
 		if (target.tableExists(table)) {
 			sql = source.generateDrop(table);
+			System.out.println("source: " + sql);
 			target.execute(sql);
 		}
 
@@ -200,7 +201,9 @@ public class DataMover {
 	}
 
 	public void copyTableData(String table)throws DatabaseException {
+			System.out.println("\n\nAbout to CREATE table - " + table + "\n\n");
 			createTable(table);
+			System.out.println("\n\nAbout to COPY table data - " + table + "\n\n");
 			copyTable(table);
 	}
 	

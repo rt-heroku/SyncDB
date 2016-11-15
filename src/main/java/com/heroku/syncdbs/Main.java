@@ -40,7 +40,9 @@ public class Main {
 			mover.setSource(source);
 			mover.setTarget(target);
 			
-			mover.copyTableData("servicesrule");
+			mover.exportDatabse();
+			
+//			mover.copyTableData("servicesrule");
 			
 			source.close();
 			target.close();
