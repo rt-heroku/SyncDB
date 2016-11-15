@@ -1,31 +1,59 @@
 package com.heroku.syncdbs;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.sql.*;
+import com.heroku.syncdbs.datamover.DataMover;
+import com.heroku.syncdbs.datamover.Database;
+import com.heroku.syncdbs.datamover.DatabaseException;
+import com.heroku.syncdbs.datamover.PostgreSQL;
 
 public class Main {
     
     public static void main(String[] args) throws Exception {
         
-        Connection sourceConn = getSourceConnection();
-        Connection targetConn = getTargetConnection();
-        
-        Statement stmtSource = sourceConn.createStatement();
-        Statement stmtTarget = sourceConn.createStatement();
+//        Connection sourceConn = getSourceConnection();
+//        Connection targetConn = getTargetConnection();
+//        
+//        Statement stmtSource = sourceConn.createStatement();
+//        Statement stmtTarget = targetConn.createStatement();
+//
+//        testDatabase(stmtSource);
+//        testDatabase(stmtTarget);
+//        
+//        stmtSource.close();
+//        stmtTarget.close();
+//        
+//        sourceConn.close();
+//        targetConn.close();
+//        
+//        System.out.println("DONE!");
+//    }
+//
+//    private static void copyTable(String table) throws Exception{
+		try {
+			DataMover mover = new DataMover();
 
-        testDatabase(stmtSource);
-        testDatabase(stmtTarget);
-        
-        stmtSource.close();
-        stmtTarget.close();
-        
-        sourceConn.close();
-        targetConn.close();
-        
-        System.out.println("DONE!");
+			Database source = new PostgreSQL();
+			source.connect("JDBC_DATABASE_URL");
+
+			Database target = new PostgreSQL();
+			target.connect("HEROKU_POSTGRESQL_AMBER_JDBC_URL");
+
+			mover.setSource(source);
+			mover.setTarget(target);
+			
+			mover.copyTableData("servicesrule");
+			
+			mover.exportDatabse();
+
+			source.close();
+			target.close();
+
+		} catch (DatabaseException e) {
+			e.printStackTrace();
+			throw e;
+		}
+
     }
-
+/*    
 	private static void testDatabase(Statement stmt) throws SQLException {
 		stmt.executeUpdate("DROP TABLE IF EXISTS ticks");
         stmt.executeUpdate("CREATE TABLE ticks (tick timestamp)");
@@ -67,4 +95,5 @@ public class Main {
         	return DriverManager.getConnection(url);
         
     }
+    */
 }
