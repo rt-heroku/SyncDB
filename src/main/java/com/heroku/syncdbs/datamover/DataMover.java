@@ -244,6 +244,10 @@ public class DataMover {
 			            	statementTrg.setInt(i, rs.getInt(i));
 			            }
 					}
+					
+					if ((rows % 10000) == 0 )
+						System.out.println("Rows -- " + rows);
+					
 					if (isDebugEnabled()) System.out.println(statementTrg.toString());
 					statementTrg.execute();
 				}
