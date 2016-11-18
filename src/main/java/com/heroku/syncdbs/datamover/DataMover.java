@@ -110,6 +110,7 @@ public class DataMover {
 		Collection<String> list = source.listTables();
 		for (String table : list) {
 			try {
+				System.out.println("Create Table:" + table);
 				createTable(table);
 				tables.add(table);
 			} catch (DatabaseException e) {
