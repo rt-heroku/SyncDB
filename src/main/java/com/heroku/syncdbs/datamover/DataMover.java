@@ -18,6 +18,7 @@ package com.heroku.syncdbs.datamover;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -75,10 +76,18 @@ public class DataMover {
 	public synchronized void createTable(String table) throws DatabaseException {
 		String sql;
 		// if the table already exists, then drop it
-		if (target.tableExists(table)) {
+//		if (target.tableExists(table)) {
+//			sql = source.generateDrop(table);
+//			System.out.println("source: " + sql);
+//			target.execute(sql);
+//		}
+
+		try{
 			sql = source.generateDrop(table);
 			System.out.println("source: " + sql);
 			target.execute(sql);
+		}catch(Exception e){
+			System.out.println("Nothing to delete!");
 		}
 		
 		System.out.println("CREATING TABLE " + table);
@@ -118,16 +127,23 @@ public class DataMover {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	private synchronized void copyTable(String table) throws DatabaseException {
+
+	
+	
+	private synchronized void copyTableFromView(String table) throws DatabaseException {
+		String iSql = "INSERT INTO servicesrule_1(id,name,approval_request_type__c,deal_governance_review_level__c,delegated_by__c,delegation_expires__c,delivery_region_s__c,dell_defined_industry__c,dgr_territories__c) VALUES (?,?,?,?,?,?,?,?,?)";
+		String sSql = "SELECT id,name,approval_request_type__c,deal_governance_review_level__c,delegated_by__c,delegation_expires__c,delivery_region_s__c,dell_defined_industry__c,dgr_territories__c FROM servicesrule";
+		copyFromSelectIntoInsert(sSql, iSql);
+	}
+	
+		private synchronized void copyTable(String table) throws DatabaseException {
 		StringBuffer selectSQL = new StringBuffer();
 		StringBuffer insertSQL = new StringBuffer();
 		StringBuffer values = new StringBuffer();
-
 		Collection<String> columns = source.listColumns(table);
-
 		selectSQL.append("SELECT ");
 		insertSQL.append("INSERT INTO ");
-		insertSQL.append(table);
+		insertSQL.append(table.toLowerCase());
 		insertSQL.append("(");
 		
 		boolean first = true;
@@ -139,8 +155,8 @@ public class DataMover {
 			} else
 				first = false;
 
-			selectSQL.append(column);
-			insertSQL.append(column);
+			selectSQL.append(column.toLowerCase());
+			insertSQL.append(column.toLowerCase());
 			values.append("?");
 		}
 		selectSQL.append(" FROM ");
@@ -150,48 +166,73 @@ public class DataMover {
 		insertSQL.append(values);
 		insertSQL.append(")");
 
-		// now copy
-		PreparedStatement statementSrc = null;
-		PreparedStatement statementTrg = null;
-		ResultSet rs = null;
+		System.out.println(insertSQL);
+		System.out.println(selectSQL);
+		
+		copyFromSelectIntoInsert(selectSQL.toString(), insertSQL.toString());
+	}
 
-		try {
-			statementTrg = target.prepareStatement(insertSQL.toString());
-			statementSrc = source.prepareStatement(selectSQL.toString());
-			rs = statementSrc.executeQuery();
+		private void copyFromSelectIntoInsert(String selectSQL, String insertSQL)
+				throws DatabaseException {
+			PreparedStatement statementSrc = null;
+			PreparedStatement statementTrg = null;
+			ResultSet rs = null;
+			
+			try {
+				statementTrg = target.prepareStatement(insertSQL.toString());
+				statementSrc = source.prepareStatement(selectSQL.toString());
+				rs = statementSrc.executeQuery();
 
-//			int rows = 0;
-
-			while (rs.next()) {
-//				rows++;
-				for (int i = 1; i <= columns.size(); i++) {
-					statementTrg.setString(i, rs.getString(i));
+				int rows = 0;
+				System.out.println("Copying data ... ");
+				while (rs.next()) {
+					rows++;
+					
+					for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+						
+						int type = rs.getMetaData().getColumnType(i);
+						
+			            if (type == Types.VARCHAR || type == Types.CHAR) {
+			            	statementTrg.setString(i, rs.getString(i));
+			            	statementTrg.setString(i, rs.getString(i));
+			            }else if (type == Types.DATE){
+			            	statementTrg.setDate(i, rs.getDate(i));
+			            }else if (type == Types.DOUBLE){
+			            	statementTrg.setDouble(i, rs.getDouble(i));
+			            	
+			            }else if (type == Types.DATE){
+			            	statementTrg.setDate(i, rs.getDate(i));
+			            }else {
+			            	statementTrg.setInt(i, rs.getInt(i));
+			            }
+					}
+//				System.out.println(statementTrg.toString());
+					statementTrg.execute();
 				}
-				statementTrg.execute();
-			}
-			rs.close();
-			statementSrc.close();
-			statementTrg.close();
-		} catch (SQLException e) {
-			throw (new DatabaseException(e));
-		} finally {
-			try {
-				if (rs != null) rs.close();
+				rs.close();
+				statementSrc.close();
+				statementTrg.close();
+				System.out.println("Rows Inserted: " + rows);
 			} catch (SQLException e) {
 				throw (new DatabaseException(e));
-			}
-			try {
-				if (statementSrc != null) statementSrc.close();
-			} catch (SQLException e) {
-				throw (new DatabaseException(e));
-			}
-			try {
-				if (statementTrg != null) statementTrg.close();
-			} catch (SQLException e) {
-				throw (new DatabaseException(e));
+			} finally {
+				try {
+					if (rs != null) rs.close();
+				} catch (SQLException e) {
+					throw (new DatabaseException(e));
+				}
+				try {
+					if (statementSrc != null) statementSrc.close();
+				} catch (SQLException e) {
+					throw (new DatabaseException(e));
+				}
+				try {
+					if (statementTrg != null) statementTrg.close();
+				} catch (SQLException e) {
+					throw (new DatabaseException(e));
+				}
 			}
 		}
-	}
 
 	private void copyTableData() throws DatabaseException {
 		for (String table : tables) {
@@ -204,11 +245,38 @@ public class DataMover {
 		copyTableData();
 	}
 
+	public void copyViewToTableData(String table) throws DatabaseException{
+		System.out.println("Deleting data in table " + table);
+		truncateTable(table);
+		
+		System.out.println("About to COPY table data - " + table);
+		copyTableFromView(table);
+	}
+	
 	public void copyTableData(String table)throws DatabaseException {
-			System.out.println("\n\nAbout to CREATE table - " + table + "\n\n");
-			createTable(table);
-			System.out.println("\n\nAbout to COPY table data - " + table + "\n\n");
-			copyTable(table);
+		System.out.println("Deleting data in table " + table);
+		truncateTable(table);
+		
+		System.out.println("About to COPY table data - " + table);
+		copyTable(table.toLowerCase());
+	}
+
+	private void truncateTable(String table) throws DatabaseException {
+		PreparedStatement statementTrg = null;
+		try{
+			statementTrg = target.prepareStatement("TRUNCATE TABLE " + table);
+			statementTrg.execute();
+			System.out.println("Table deleted from table: " + table);
+		} catch (SQLException e) {
+			throw (new DatabaseException(e));
+		} finally {
+			try {
+				if (statementTrg != null) statementTrg.close();
+			} catch (SQLException e) {
+				throw (new DatabaseException(e));
+			}
+		}
+
 	}
 	
 }

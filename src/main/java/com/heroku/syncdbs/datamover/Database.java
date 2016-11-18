@@ -49,6 +49,7 @@ public abstract class Database {
 	public abstract String processType(String type, int i);
 
 	public abstract void connect(String var) throws SQLException;
+	public abstract void connectString(String jdbc) throws SQLException;
 	
 	
     /**
@@ -148,9 +149,13 @@ public abstract class Database {
 				StringBuffer sql = new StringBuffer();
 	
 				sql.append("SELECT * FROM ");
-				sql.append(table);
+				sql.append(table.toLowerCase());
 				
+				System.out.println(sql.toString());
+
 				stmt = connection.createStatement();
+				//rs = stmt.executeQuery("SELECT * FROM TABLE_A");
+
 				rs = stmt.executeQuery(sql.toString());
 				md = rs.getMetaData();
 	
@@ -161,7 +166,7 @@ public abstract class Database {
 				for (int i = 1; i <= md.getColumnCount(); i++) {
 					if (i != 1)
 						result.append(',');
-					result.append(md.getColumnName(i));
+					result.append(md.getColumnName(i).toLowerCase());
 					result.append(' ');
 	
 					String type = processType(md.getColumnTypeName(i), md
@@ -284,10 +289,11 @@ public abstract class Database {
 			dbm = connection.getMetaData();
 
 			String types[] = { "TABLE" };
-			rs = dbm.getTables(null, null, "", types);
+			rs = dbm.getTables(null, "public", null, types);
 
 			while (rs.next()) {
 				String str = rs.getString("TABLE_NAME");
+				System.out.println("TABLE NAME = " + str);
 				result.add(str);
 			}
 			rs.close();
@@ -323,7 +329,7 @@ public abstract class Database {
 			dbm = connection.getMetaData();
 			
 			String types[] = { "TABLE" };
-			rs = dbm.getTables(null, null, table, types);
+			rs = dbm.getTables(null, "public", table.toLowerCase(), types);
 			result = rs.next();
 			rs.close();
 		} catch (SQLException e) {
@@ -356,9 +362,9 @@ public abstract class Database {
 		try {
 			DatabaseMetaData dbm;
 			dbm = connection.getMetaData();
-			rs = dbm.getColumns(null, null, table, null);
+			rs = dbm.getColumns(null, "public", table.toLowerCase(), "%");
 			while (rs.next()) {
-				result.add(rs.getString("COLUMN_NAME"));
+				result.add(rs.getString("COLUMN_NAME").toLowerCase());
 			}
 			rs.close();
 		} catch (SQLException e) {

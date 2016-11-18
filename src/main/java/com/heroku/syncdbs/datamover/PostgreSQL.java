@@ -19,8 +19,11 @@ public class PostgreSQL extends Database {
 	}
 	
 	public void connect (String sysvar) throws SQLException{
-    	String url = System.getenv("JDBC_DATABASE_URL") + "";
+    	String url = System.getenv(sysvar) + "";
     	connection = DriverManager.getConnection(url);
+	}
+	public void connectString (String url) throws SQLException{
+		connection = DriverManager.getConnection(url);
 	}
 
 }

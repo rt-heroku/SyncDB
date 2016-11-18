@@ -1,48 +1,36 @@
 package com.heroku.syncdbs;
 
+import java.sql.SQLException;
+
 import com.heroku.syncdbs.datamover.DataMover;
 import com.heroku.syncdbs.datamover.Database;
 import com.heroku.syncdbs.datamover.DatabaseException;
 import com.heroku.syncdbs.datamover.PostgreSQL;
 
 public class Main {
+    public static String SOURCE_VAR="HEROKU_POSTGRESQL_GRAY_JDBC_URL";
+    public static String TARGET_VAR="HEROKU_POSTGRESQL_JADE_JDBC_URL";
     
     public static void main(String[] args) throws Exception {
-        
-//        Connection sourceConn = getSourceConnection();
-//        Connection targetConn = getTargetConnection();
-//        
-//        Statement stmtSource = sourceConn.createStatement();
-//        Statement stmtTarget = targetConn.createStatement();
-//
-//        testDatabase(stmtSource);
-//        testDatabase(stmtTarget);
-//        
-//        stmtSource.close();
-//        stmtTarget.close();
-//        
-//        sourceConn.close();
-//        targetConn.close();
-//        
-//        System.out.println("DONE!");
-//    }
-//
-//    private static void copyTable(String table) throws Exception{
 		try {
+			
+			System.out.println("Starting data mover ... ");
 			DataMover mover = new DataMover();
 
+			//gray database
 			Database source = new PostgreSQL();
-			source.connect("JDBC_DATABASE_URL");
-
+			//JADE database
 			Database target = new PostgreSQL();
-			target.connect("HEROKU_POSTGRESQL_AMBER_JDBC_URL");
 
+			connectUsingHerokuVars(source, target);
+
+//			connectUsingJdbcUrls(source, target);
+			
 			mover.setSource(source);
 			mover.setTarget(target);
 			
-			mover.exportDatabse();
-			
-//			mover.copyTableData("servicesrule");
+			//mover.copyTableData("servicesrule_1");
+			mover.copyViewToTableData("servicesrule_1");
 			
 			source.close();
 			target.close();
@@ -53,47 +41,16 @@ public class Main {
 		}
 
     }
-/*    
-	private static void testDatabase(Statement stmt) throws SQLException {
-		stmt.executeUpdate("DROP TABLE IF EXISTS ticks");
-        stmt.executeUpdate("CREATE TABLE ticks (tick timestamp)");
-        stmt.executeUpdate("INSERT INTO ticks VALUES (now())");
-        ResultSet rs = stmt.executeQuery("SELECT tick FROM ticks");
-        while (rs.next()) {
-            System.out.println("Read from DB[" + stmt.getConnection().getMetaData().getURL() + "]: " + rs.getTimestamp("tick"));
-        }
-        
-        rs.close();
+	private static void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
+		source.connectString("jdbc:postgresql://ec2-52-73-169-99.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+		target.connectString("jdbc:postgresql://ec2-54-243-47-213.compute-1.amazonaws.com:5432/dfh0t3febn05fs?user=vmblscrfgwnpal&password=gIFhkN66JVvthBl47Utvxxxm9J&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 	}
-    
-    private static Connection getSourceConnection() throws URISyntaxException, SQLException {
-    	String url = System.getenv("JDBC_DATABASE_URL") + "";
-        URI dbUri = new URI(System.getenv("DATABASE_URL"));
 
-        String username = dbUri.getUserInfo().split(":")[0];
-        String password = dbUri.getUserInfo().split(":")[1];
-        String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
+	private static void connectUsingHerokuVars(Database source, Database target) throws SQLException {
+		source.connect(SOURCE_VAR);
+		System.out.println("Connected to DATABSE: " + SOURCE_VAR);
 
-        if (url.equals(""))
-        	return DriverManager.getConnection(dbUrl, username, password);
-        else
-        	return DriverManager.getConnection(url);
-        
-    }
-
-    private static Connection getTargetConnection() throws URISyntaxException, SQLException {
-    	String url = System.getenv("HEROKU_POSTGRESQL_AMBER_JDBC_URL") + "";
-        URI dbUri = new URI(System.getenv("HEROKU_POSTGRESQL_AMBER_URL"));
-
-        String username = dbUri.getUserInfo().split(":")[0];
-        String password = dbUri.getUserInfo().split(":")[1];
-        String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + dbUri.getPath();
-
-        if (url.equals(""))
-        	return DriverManager.getConnection(dbUrl, username, password);
-        else
-        	return DriverManager.getConnection(url);
-        
-    }
-    */
+		target.connect(TARGET_VAR);
+		System.out.println("Connected to DATABSE: " + TARGET_VAR);
+	}
 }
