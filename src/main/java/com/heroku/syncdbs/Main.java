@@ -29,9 +29,9 @@ public class Main {
 			//JADE database
 			Database target = new PostgreSQL();
 
-//			connectUsingHerokuVars(source, target);
+			connectUsingHerokuVars(source, target);
 
-			connectUsingJdbcUrls(source, target);
+//			connectUsingJdbcUrls(source, target);
 			
 			mover.setSource(source);
 			mover.setTarget(target);

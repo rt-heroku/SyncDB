@@ -215,6 +215,7 @@ public class DataMover {
 			PreparedStatement statementSrc = null;
 			PreparedStatement statementTrg = null;
 			ResultSet rs = null;
+			int type = 0;
 			
 			try {
 				statementTrg = target.prepareStatement(insertSQL.toString());
@@ -228,21 +229,30 @@ public class DataMover {
 					
 					for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
 						
-						int type = rs.getMetaData().getColumnType(i);
+						type = rs.getMetaData().getColumnType(i);
 						
 			            if (type == Types.VARCHAR || type == Types.CHAR) {
 			            	statementTrg.setString(i, rs.getString(i));
 			            	statementTrg.setString(i, rs.getString(i));
-			            }else if (type == Types.DATE){
-			            	statementTrg.setDate(i, rs.getDate(i));
-			            }else if (type == Types.DOUBLE){
-			            	statementTrg.setDouble(i, rs.getDouble(i));
-			            	
-			            }else if (type == Types.DATE){
-			            	statementTrg.setDate(i, rs.getDate(i));
-			            }else {
-			            	statementTrg.setInt(i, rs.getInt(i));
 			            }
+			            else if (type == Types.DATE)
+			            	statementTrg.setDate(i, rs.getDate(i));
+			            else if (type == Types.DOUBLE)
+			            	statementTrg.setDouble(i, rs.getDouble(i));
+			            else if (type == Types.DATE)
+			            	statementTrg.setDate(i, rs.getDate(i));
+			            else if (type == Types.TIMESTAMP)
+			            	statementTrg.setTimestamp(i, rs.getTimestamp(i));
+						else if (type == Types.TIME)
+							statementTrg.setTime(i, rs.getTime(i));
+						else if (type == Types.TIME_WITH_TIMEZONE)
+							statementTrg.setTime(i, rs.getTime(i));
+						else if (type == Types.TIMESTAMP_WITH_TIMEZONE)
+							statementTrg.setTimestamp(i, rs.getTimestamp(i));
+			            else if (type == Types.FLOAT)
+			            	statementTrg.setFloat(i, rs.getFloat(i));
+			            else
+			            	statementTrg.setInt(i, rs.getInt(i));
 					}
 					
 					if ((rows % 10000) == 0 )
@@ -256,6 +266,7 @@ public class DataMover {
 				statementTrg.close();
 				System.out.println("Rows Inserted: " + rows);
 			} catch (SQLException e) {
+				System.err.println("column type = " + type);
 				throw (new DatabaseException(e));
 			} finally {
 				try {
