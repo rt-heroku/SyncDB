@@ -1,0 +1,7 @@
+load: [
+	{
+		table:'servicesrule',
+		insert:'INSERT INTO servicesrule_1(id,name,approval_request_type__c,deal_governance_review_level__c,delegated_by__c,delegation_expires__c,delivery_region_s__c,dell_defined_industry__c,dgr_territories__c) VALUES (?,?,?,?,?,?,?,?,?)',
+		select:'SELECT id,name,approval_request_type__c,deal_governance_review_level__c,delegated_by__c,delegation_expires__c,delivery_region_s__c,dell_defined_industry__c,dgr_territories__c FROM servicesrule',
+	}
+]

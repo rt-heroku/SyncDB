@@ -111,6 +111,7 @@ public class DataMover {
 		for (String table : list) {
 			try {
 				System.out.println("Create Table:" + table);
+				
 				createTable(table);
 				tables.add(table);
 			} catch (DatabaseException e) {
@@ -129,8 +130,6 @@ public class DataMover {
 	 *             If a database error occurs.
 	 */
 
-	
-	
 	private synchronized void copyTableFromView(String table) throws DatabaseException {
 		String iSql = "INSERT INTO servicesrule_1(id,name,approval_request_type__c,deal_governance_review_level__c,delegated_by__c,delegation_expires__c,delivery_region_s__c,dell_defined_industry__c,dgr_territories__c) VALUES (?,?,?,?,?,?,?,?,?)";
 		String sSql = "SELECT id,name,approval_request_type__c,deal_governance_review_level__c,delegated_by__c,delegation_expires__c,delivery_region_s__c,dell_defined_industry__c,dgr_territories__c FROM servicesrule";
@@ -278,6 +277,18 @@ public class DataMover {
 			}
 		}
 
+	}
+
+	public void createTablesFromViews() {
+		
+		//read all the views from the database
+		//create a table for each view 
+		
+		try{
+			source.getConnection().createStatement().executeQuery("CREATE TABLE public.servicesrule_4 AS SELECT * FROM public.servicesrule");
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 	
 }
