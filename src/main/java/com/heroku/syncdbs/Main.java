@@ -29,7 +29,7 @@ public class Main {
 			mover.setSource(source);
 			mover.setTarget(target);
 			
-			mover.createTablesFromViews();
+//			mover.createTablesFromViews();
 			
 //			mover.exportDatabse();
 			//mover.copyTableData("servicesrule_1");
