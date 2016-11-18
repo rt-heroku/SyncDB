@@ -231,10 +231,8 @@ public class DataMover {
 						
 						type = rs.getMetaData().getColumnType(i);
 						
-			            if (type == Types.VARCHAR || type == Types.CHAR) {
+			            if (type == Types.VARCHAR || type == Types.CHAR)
 			            	statementTrg.setString(i, rs.getString(i));
-			            	statementTrg.setString(i, rs.getString(i));
-			            }
 			            else if (type == Types.DATE)
 			            	statementTrg.setDate(i, rs.getDate(i));
 			            else if (type == Types.DOUBLE)
@@ -251,6 +249,8 @@ public class DataMover {
 							statementTrg.setTimestamp(i, rs.getTimestamp(i));
 			            else if (type == Types.FLOAT)
 			            	statementTrg.setFloat(i, rs.getFloat(i));
+			            else if (type == Types.BIT || type == Types.BOOLEAN)
+			            	statementTrg.setBoolean(i, rs.getBoolean(i));
 			            else
 			            	statementTrg.setInt(i, rs.getInt(i));
 					}
