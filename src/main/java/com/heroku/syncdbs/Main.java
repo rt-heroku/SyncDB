@@ -1,6 +1,8 @@
 package com.heroku.syncdbs;
 
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 import com.heroku.syncdbs.datamover.DataMover;
 import com.heroku.syncdbs.datamover.Database;
@@ -11,10 +13,15 @@ public class Main {
     public static String SOURCE_VAR="HEROKU_POSTGRESQL_GRAY_JDBC_URL";
     public static String TARGET_VAR="HEROKU_POSTGRESQL_JADE_JDBC_URL";
     
+    protected static boolean isDebugEnabled(){
+    	String ret = System.getenv("DEBUG") + "";
+    	return ret.equals("TRUE");
+    }
+    
     public static void main(String[] args) throws Exception {
 		try {
 			
-			System.out.println("Starting data mover ... ");
+			System.out.println("Starting data mover ... " + getCurrentTime());
 			DataMover mover = new DataMover();
 
 			//gray database
@@ -22,38 +29,48 @@ public class Main {
 			//JADE database
 			Database target = new PostgreSQL();
 
-			connectUsingHerokuVars(source, target);
+//			connectUsingHerokuVars(source, target);
 
-//			connectUsingJdbcUrls(source, target);
+			connectUsingJdbcUrls(source, target);
 			
 			mover.setSource(source);
 			mover.setTarget(target);
 			
-//			mover.createTablesFromViews();
+			if (isDebugEnabled()){
+				mover.printGeneralMetadata(source);
+				mover.printGeneralMetadata(target);
+			}
 			
-//			mover.exportDatabse();
-			//mover.copyTableData("servicesrule_1");
-			mover.copyViewToTableData("servicesrule_1");
+			mover.exportDatabase();
 			
 			source.close();
 			target.close();
-
+			
+			System.out.println("Data mover ENDED!" +	getCurrentTime());
+			
 		} catch (DatabaseException e) {
 			e.printStackTrace();
 			throw e;
 		}
 
     }
-	private static void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
+	protected static void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
 		source.connectString("jdbc:postgresql://ec2-52-73-169-99.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
-		target.connectString("jdbc:postgresql://ec2-54-243-47-213.compute-1.amazonaws.com:5432/dfh0t3febn05fs?user=vmblscrfgwnpal&password=gIFhkN66JVvthBl47Utvxxxm9J&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+		target.connectString("jdbc:postgresql://ec2-52-200-41-184.compute-1.amazonaws.com:5432/d9mgkh21nofekg?user=uegso4e2g4jqof&password=p991t3gs4ehj3ublia03ssn3jgs&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 	}
 
-	private static void connectUsingHerokuVars(Database source, Database target) throws SQLException {
+	protected static void connectUsingHerokuVars(Database source, Database target) throws SQLException {
 		source.connect(SOURCE_VAR);
 		System.out.println("Connected to DATABSE: " + SOURCE_VAR);
 
 		target.connect(TARGET_VAR);
 		System.out.println("Connected to DATABSE: " + TARGET_VAR);
 	}
+	
+	protected static String getCurrentTime(){
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        return sdf.format(cal.getTime());
+	}
+	
 }

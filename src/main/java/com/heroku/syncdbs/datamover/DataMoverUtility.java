@@ -45,7 +45,7 @@ public class DataMoverUtility {
 
 			mover.setSource(source);
 			mover.setTarget(target);
-			mover.exportDatabse();
+			mover.exportDatabase();
 
 			source.close();
 			target.close();
@@ -71,7 +71,7 @@ public class DataMoverUtility {
 			mover.setTarget(target);
 			System.out.print( "Loading WordNet DB into memory ... " );
 			long t0 = System.currentTimeMillis();
-			mover.exportDatabse();
+			mover.exportDatabase();
 			long t1 = System.currentTimeMillis();
 			System.out.println( "done in "+((double)(t1-t0)/1000D)+" sec." );
 			source.close();

@@ -52,7 +52,11 @@ public abstract class Database {
 	public abstract void connectString(String jdbc) throws SQLException;
 	
 	
-    /**
+	protected boolean isDebugEnabled(){
+    	String ret = System.getenv("DEBUG") + "";
+    	return ret.equals("TRUE");
+    }
+   /**
 	 * Open a connection to the database.
 	 * 
 	 * @param driver
@@ -125,7 +129,7 @@ public abstract class Database {
 		StringBuffer result = new StringBuffer();
 		result.append("DROP TABLE ");
 		result.append(table);
-		result.append(";\n");
+		//result.append(";\n");
 		return result.toString();
 	}
 
@@ -151,7 +155,8 @@ public abstract class Database {
 				sql.append("SELECT * FROM ");
 				sql.append(table.toLowerCase());
 				
-				System.out.println(sql.toString());
+				if (isDebugEnabled())
+					System.out.println(sql.toString());
 
 				stmt = connection.createStatement();
 				//rs = stmt.executeQuery("SELECT * FROM TABLE_A");
@@ -288,13 +293,16 @@ public abstract class Database {
 			DatabaseMetaData dbm;
 			dbm = connection.getMetaData();
 
-			String types[] = { "TABLE" };
+			String types[] = { "VIEW" };
 			rs = dbm.getTables(null, "public", null, types);
-
 			while (rs.next()) {
 				String str = rs.getString("TABLE_NAME");
-				System.out.println("TABLE NAME = " + str);
-				result.add(str);
+				
+				if (!str.startsWith("pg_")){
+					String type = rs.getString("TABLE_TYPE");
+					System.out.println("Found [" + type + "] - NAMED = " + str);
+					result.add(str);
+				}
 			}
 			rs.close();
 		} catch (SQLException e) {
@@ -362,7 +370,7 @@ public abstract class Database {
 		try {
 			DatabaseMetaData dbm;
 			dbm = connection.getMetaData();
-			rs = dbm.getColumns(null, "public", table.toLowerCase(), "%");
+			rs = dbm.getColumns(null, "public", table.toLowerCase(), null);
 			while (rs.next()) {
 				result.add(rs.getString("COLUMN_NAME").toLowerCase());
 			}

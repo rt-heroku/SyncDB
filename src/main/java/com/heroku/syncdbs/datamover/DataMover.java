@@ -15,6 +15,7 @@
  */
 package com.heroku.syncdbs.datamover;
 
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -62,6 +63,23 @@ public class DataMover {
 	public void setTarget(Database target) {
 		this.target = target;
 	}
+	public void printGeneralMetadata(Database db) throws SQLException {
+		DatabaseMetaData metadata = db.getConnection().getMetaData();
+		System.out.println("Database Product Name: "
+				+ metadata.getDatabaseProductName());
+		System.out.println("Database Product Version: "
+				+ metadata.getDatabaseProductVersion());
+		System.out.println("Logged User: " + metadata.getUserName());
+		System.out.println("JDBC Driver: " + metadata.getDriverName());
+		System.out.println("Driver Version: " + metadata.getDriverVersion());
+		System.out.println("\n");
+	}
+
+	protected boolean isDebugEnabled(){
+    	String ret = System.getenv("DEBUG") + "";
+    	return ret.equals("TRUE");
+    }
+    
 
 	/**
 	 * Create the specified table. To do this the source database will be
@@ -75,27 +93,21 @@ public class DataMover {
 	 */
 	public synchronized void createTable(String table) throws DatabaseException {
 		String sql;
-		// if the table already exists, then drop it
-//		if (target.tableExists(table)) {
-//			sql = source.generateDrop(table);
-//			System.out.println("source: " + sql);
-//			target.execute(sql);
-//		}
 
 		try{
 			sql = source.generateDrop(table);
-			System.out.println("source: " + sql);
 			target.execute(sql);
+			System.out.println("TABLE DROPPED: " + table);
+			if (isDebugEnabled())
+				System.out.println("DEBUG - " + sql);
+			
 		}catch(Exception e){
-			System.out.println("Nothing to delete!");
+			System.out.println("Error while deleting table - " + e.getMessage());
 		}
 		
 		System.out.println("CREATING TABLE " + table);
-		// now create the table
 		sql = source.generateCreate(table);
-		
-		System.out.println("DEBUG - " + sql);
-		
+		if (isDebugEnabled()) System.out.println("DEBUG - execute in target: " + sql);
 		target.execute(sql);
 	}
 
@@ -110,16 +122,40 @@ public class DataMover {
 		Collection<String> list = source.listTables();
 		for (String table : list) {
 			try {
-				System.out.println("Create Table:" + table);
-				
-				createTable(table);
-				tables.add(table);
+				if (!table.startsWith("pg_")){
+					createTable(table);
+					tables.add(table);
+				}
 			} catch (DatabaseException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
+	protected synchronized void debugSourceViews() throws DatabaseException {
+		Collection<String> list = source.listTables();
+		for (String table : list) {
+			System.out.println("Found Table/View:" + table);
+			
+			Collection<String> columns = source.listColumns(table);
+
+			for (String column : columns){
+				System.out.println("\tColumn name: " + column);
+			}
+		}
+	}
+	protected synchronized void debugTargetTables() throws DatabaseException {
+		Collection<String> list = target.listTables();
+		for (String table : list) {
+			System.out.println("Found Table in target: " + table);
+			
+			Collection<String> columns = source.listColumns(table);
+
+			for (String column : columns){
+				System.out.println("\tColumn name: " + column);
+			}
+		}
+	}
 	/**
 	 * Copy the data from one table to another. To do this both a SELECT and
 	 * INSERT statement must be created.
@@ -136,7 +172,7 @@ public class DataMover {
 		copyFromSelectIntoInsert(sSql, iSql);
 	}
 	
-		private synchronized void copyTable(String table) throws DatabaseException {
+	private synchronized void copyTable(String table) throws DatabaseException {
 		StringBuffer selectSQL = new StringBuffer();
 		StringBuffer insertSQL = new StringBuffer();
 		StringBuffer values = new StringBuffer();
@@ -166,8 +202,10 @@ public class DataMover {
 		insertSQL.append(values);
 		insertSQL.append(")");
 
-		System.out.println(insertSQL);
-		System.out.println(selectSQL);
+		if (isDebugEnabled()){
+			System.out.println("DEBUG SQL: " + insertSQL);
+			System.out.println("DEBUG SQL: " + selectSQL);
+		}
 		
 		copyFromSelectIntoInsert(selectSQL.toString(), insertSQL.toString());
 	}
@@ -206,7 +244,7 @@ public class DataMover {
 			            	statementTrg.setInt(i, rs.getInt(i));
 			            }
 					}
-//				System.out.println(statementTrg.toString());
+					if (isDebugEnabled()) System.out.println(statementTrg.toString());
 					statementTrg.execute();
 				}
 				rs.close();
@@ -240,7 +278,11 @@ public class DataMover {
 		}
 	}
 
-	public void exportDatabse() throws DatabaseException {
+	public void exportDatabase() throws DatabaseException {
+		if (isDebugEnabled()){
+			debugSourceViews();
+			debugTargetTables();
+		}
 		createTables();
 		copyTableData();
 	}
@@ -278,17 +320,4 @@ public class DataMover {
 		}
 
 	}
-
-	public void createTablesFromViews() {
-		
-		//read all the views from the database
-		//create a table for each view 
-		
-		try{
-			source.getConnection().createStatement().executeQuery("CREATE TABLE public.servicesrule_4 AS SELECT * FROM public.servicesrule");
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-	}
-	
 }
