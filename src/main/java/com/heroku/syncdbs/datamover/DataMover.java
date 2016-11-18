@@ -166,12 +166,6 @@ public class DataMover {
 	 *             If a database error occurs.
 	 */
 
-	private synchronized void copyTableFromView(String table) throws DatabaseException {
-		String iSql = "INSERT INTO servicesrule_1(id,name,approval_request_type__c,deal_governance_review_level__c,delegated_by__c,delegation_expires__c,delivery_region_s__c,dell_defined_industry__c,dgr_territories__c) VALUES (?,?,?,?,?,?,?,?,?)";
-		String sSql = "SELECT id,name,approval_request_type__c,deal_governance_review_level__c,delegated_by__c,delegation_expires__c,delivery_region_s__c,dell_defined_industry__c,dgr_territories__c FROM servicesrule";
-		copyFromSelectIntoInsert(sSql, iSql);
-	}
-	
 	private synchronized void copyTable(String table) throws DatabaseException {
 		StringBuffer selectSQL = new StringBuffer();
 		StringBuffer insertSQL = new StringBuffer();
@@ -207,10 +201,10 @@ public class DataMover {
 			System.out.println("DEBUG SQL: " + selectSQL);
 		}
 		
-		copyFromSelectIntoInsert(selectSQL.toString(), insertSQL.toString());
+		copyFromSelectIntoInsert(selectSQL.toString(), insertSQL.toString(), table);
 	}
 
-		private void copyFromSelectIntoInsert(String selectSQL, String insertSQL)
+		private void copyFromSelectIntoInsert(String selectSQL, String insertSQL, String table)
 				throws DatabaseException {
 			PreparedStatement statementSrc = null;
 			PreparedStatement statementTrg = null;
@@ -220,6 +214,7 @@ public class DataMover {
 			try {
 				statementTrg = target.prepareStatement(insertSQL.toString());
 				statementSrc = source.prepareStatement(selectSQL.toString());
+				statementSrc.setFetchSize(10000);
 				rs = statementSrc.executeQuery();
 
 				int rows = 0;
@@ -256,7 +251,7 @@ public class DataMover {
 					}
 					
 					if ((rows % 10000) == 0 )
-						System.out.println("Rows -- " + rows);
+						System.out.println("TABLE [" + table + "] Rows -- " + rows);
 					
 					if (isDebugEnabled()) System.out.println(statementTrg.toString());
 					statementTrg.execute();
@@ -264,7 +259,7 @@ public class DataMover {
 				rs.close();
 				statementSrc.close();
 				statementTrg.close();
-				System.out.println("Rows Inserted: " + rows);
+				System.out.println("TABLE [" + table + "] Rows Inserted: " + rows);
 			} catch (SQLException e) {
 				System.err.println("column type = " + getSqlTypeName(type));
 				throw (new DatabaseException(e));
@@ -300,14 +295,6 @@ public class DataMover {
 		}
 		createTables();
 		copyTableData();
-	}
-
-	public void copyViewToTableData(String table) throws DatabaseException{
-		System.out.println("Deleting data in table " + table);
-		truncateTable(table);
-		
-		System.out.println("About to COPY table data - " + table);
-		copyTableFromView(table);
 	}
 	
 	public void copyTableData(String table)throws DatabaseException {
