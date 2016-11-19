@@ -43,6 +43,9 @@ public class Main {
 			
 			mover.exportDatabase();
 			
+			source.getConnection().setAutoCommit(false);
+			target.getConnection().setAutoCommit(false);
+			
 			source.close();
 			target.close();
 			

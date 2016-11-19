@@ -409,6 +409,16 @@ public abstract class Database {
 		return statement;
 	}
 
+	public PreparedStatement prepareForwardStatement(String sql)
+			throws DatabaseException {
+		PreparedStatement statement = null;
+		try {
+			statement = connection.prepareStatement(sql, java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY);
+		} catch (SQLException e) {
+			throw (new DatabaseException(e));
+		}
+		return statement;
+	}
 
 	/**
 	 * @return the connection

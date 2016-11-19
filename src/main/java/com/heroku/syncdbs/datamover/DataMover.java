@@ -19,6 +19,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -213,7 +214,7 @@ public class DataMover {
 			
 			try {
 				statementTrg = target.prepareStatement(insertSQL.toString());
-				statementSrc = source.prepareStatement(selectSQL.toString());
+				statementSrc = source.prepareForwardStatement(selectSQL.toString());
 				statementSrc.setFetchSize(10000);
 				rs = statementSrc.executeQuery();
 
@@ -250,12 +251,15 @@ public class DataMover {
 			            	statementTrg.setInt(i, rs.getInt(i));
 					}
 					
-					if ((rows % 10000) == 0 )
-						System.out.println("TABLE [" + table + "] Rows -- " + rows);
-					
 					if (isDebugEnabled()) System.out.println(statementTrg.toString());
 					statementTrg.execute();
+
+					if ((rows % 10000) == 0 ){
+						target.getConnection().commit();
+						System.out.println("TABLE [" + table + "] Rows -- " + rows);
+					}
 				}
+				target.getConnection().commit();
 				rs.close();
 				statementSrc.close();
 				statementTrg.close();
