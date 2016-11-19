@@ -41,10 +41,10 @@ public class Main {
 				mover.printGeneralMetadata(target);
 			}
 			
-			mover.exportDatabase();
-			
 			source.getConnection().setAutoCommit(false);
 			target.getConnection().setAutoCommit(false);
+
+			mover.exportDatabase();
 			
 			source.close();
 			target.close();

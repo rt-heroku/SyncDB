@@ -19,7 +19,6 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -211,10 +210,8 @@ public class DataMover {
 			PreparedStatement statementTrg = null;
 			ResultSet rs = null;
 			int type = 0;
-			double offset = 0;
 			
 			try {
-//				for(;;){
 					statementSrc = source.prepareForwardStatement(selectSQL.toString());
 					statementSrc.setFetchSize(10000);
 					rs = statementSrc.executeQuery();
@@ -222,23 +219,22 @@ public class DataMover {
 					int rows = 0;
 					System.out.println("Copying data ... ");
 
-//					statementTrg = target.prepareStatement(insertSQL.toString());
 					while (rs.next()) {
+						statementTrg = target.prepareStatement(insertSQL.toString());
 						rows++;
 						
-//						type = insertRow(statementTrg, rs, type);
+						type = insertRow(statementTrg, rs, type);
 	
 						if ((rows % 10000) == 0 ){
-							//target.getConnection().commit();
+							target.getConnection().commit();
 							System.out.println("TABLE [" + table + "] Rows -- " + rows);
 						}
+						statementTrg.close();
 					}
-					//target.getConnection().commit();
+					target.getConnection().commit();
 					rs.close();
 					statementSrc.close();
-//					statementTrg.close();
-					System.out.println("TABLE [" + table + "] Rows Inserted: " + rows);
-//				}
+					System.out.println("TABLE [" + table + "] TOTAL Rows Inserted: " + rows);
 			} catch (SQLException e) {
 				System.err.println("column type = " + getSqlTypeName(type));
 				throw (new DatabaseException(e));
