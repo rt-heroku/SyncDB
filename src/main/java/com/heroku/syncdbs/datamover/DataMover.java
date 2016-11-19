@@ -211,59 +211,34 @@ public class DataMover {
 			PreparedStatement statementTrg = null;
 			ResultSet rs = null;
 			int type = 0;
+			double offset = 0;
 			
 			try {
-				statementTrg = target.prepareStatement(insertSQL.toString());
-				statementSrc = source.prepareForwardStatement(selectSQL.toString());
-				statementSrc.setFetchSize(10000);
-				rs = statementSrc.executeQuery();
+//				for(;;){
+					statementSrc = source.prepareForwardStatement(selectSQL.toString());
+					statementSrc.setFetchSize(10000);
+					rs = statementSrc.executeQuery();
+	
+					int rows = 0;
+					System.out.println("Copying data ... ");
 
-				int rows = 0;
-				System.out.println("Copying data ... ");
-				while (rs.next()) {
-					rows++;
-					
-					for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+//					statementTrg = target.prepareStatement(insertSQL.toString());
+					while (rs.next()) {
+						rows++;
 						
-						type = rs.getMetaData().getColumnType(i);
-						
-			            if (type == Types.VARCHAR || type == Types.CHAR)
-			            	statementTrg.setString(i, rs.getString(i));
-			            else if (type == Types.DATE)
-			            	statementTrg.setDate(i, rs.getDate(i));
-			            else if (type == Types.DOUBLE)
-			            	statementTrg.setDouble(i, rs.getDouble(i));
-			            else if (type == Types.DATE)
-			            	statementTrg.setDate(i, rs.getDate(i));
-			            else if (type == Types.TIMESTAMP)
-			            	statementTrg.setTimestamp(i, rs.getTimestamp(i));
-						else if (type == Types.TIME)
-							statementTrg.setTime(i, rs.getTime(i));
-						else if (type == Types.TIME_WITH_TIMEZONE)
-							statementTrg.setTime(i, rs.getTime(i));
-						else if (type == Types.TIMESTAMP_WITH_TIMEZONE)
-							statementTrg.setTimestamp(i, rs.getTimestamp(i));
-			            else if (type == Types.FLOAT)
-			            	statementTrg.setFloat(i, rs.getFloat(i));
-			            else if (type == Types.BIT || type == Types.BOOLEAN)
-			            	statementTrg.setBoolean(i, rs.getBoolean(i));
-			            else
-			            	statementTrg.setInt(i, rs.getInt(i));
+//						type = insertRow(statementTrg, rs, type);
+	
+						if ((rows % 10000) == 0 ){
+							//target.getConnection().commit();
+							System.out.println("TABLE [" + table + "] Rows -- " + rows);
+						}
 					}
-					
-					if (isDebugEnabled()) System.out.println(statementTrg.toString());
-					statementTrg.execute();
-
-					if ((rows % 10000) == 0 ){
-						target.getConnection().commit();
-						System.out.println("TABLE [" + table + "] Rows -- " + rows);
-					}
-				}
-				target.getConnection().commit();
-				rs.close();
-				statementSrc.close();
-				statementTrg.close();
-				System.out.println("TABLE [" + table + "] Rows Inserted: " + rows);
+					//target.getConnection().commit();
+					rs.close();
+					statementSrc.close();
+//					statementTrg.close();
+					System.out.println("TABLE [" + table + "] Rows Inserted: " + rows);
+//				}
 			} catch (SQLException e) {
 				System.err.println("column type = " + getSqlTypeName(type));
 				throw (new DatabaseException(e));
@@ -284,6 +259,40 @@ public class DataMover {
 					throw (new DatabaseException(e));
 				}
 			}
+		}
+
+		private int insertRow(PreparedStatement statementTrg, ResultSet rs, int type) throws SQLException {
+			for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+				
+				type = rs.getMetaData().getColumnType(i);
+				
+			    if (type == Types.VARCHAR || type == Types.CHAR)
+			    	statementTrg.setString(i, rs.getString(i));
+			    else if (type == Types.DATE)
+			    	statementTrg.setDate(i, rs.getDate(i));
+			    else if (type == Types.DOUBLE)
+			    	statementTrg.setDouble(i, rs.getDouble(i));
+			    else if (type == Types.DATE)
+			    	statementTrg.setDate(i, rs.getDate(i));
+			    else if (type == Types.TIMESTAMP)
+			    	statementTrg.setTimestamp(i, rs.getTimestamp(i));
+				else if (type == Types.TIME)
+					statementTrg.setTime(i, rs.getTime(i));
+				else if (type == Types.TIME_WITH_TIMEZONE)
+					statementTrg.setTime(i, rs.getTime(i));
+				else if (type == Types.TIMESTAMP_WITH_TIMEZONE)
+					statementTrg.setTimestamp(i, rs.getTimestamp(i));
+			    else if (type == Types.FLOAT)
+			    	statementTrg.setFloat(i, rs.getFloat(i));
+			    else if (type == Types.BIT || type == Types.BOOLEAN)
+			    	statementTrg.setBoolean(i, rs.getBoolean(i));
+			    else
+			    	statementTrg.setInt(i, rs.getInt(i));
+			}
+			
+			if (isDebugEnabled()) System.out.println(statementTrg.toString());
+//						statementTrg.execute();
+			return type;
 		}
 
 	private void copyTableData() throws DatabaseException {
