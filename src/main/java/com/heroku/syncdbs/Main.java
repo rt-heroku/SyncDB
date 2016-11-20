@@ -45,7 +45,7 @@ public class Main {
 			
 			System.out.println("Data mover ENDED!" +	getCurrentTime());
 		    long t2 = System.currentTimeMillis();
-		    System.out.println(" Took " + (t2 - t1) / 1000 + " seconds");
+		    System.out.println(" Took " + (t2 - t1) / 1000 + " seconds to run the job!");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
