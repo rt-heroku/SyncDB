@@ -15,11 +15,8 @@ import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ScheduleJob {
-	final static Logger logger = LoggerFactory.getLogger(ScheduleJob.class);
 
 	public static void main(String[] args) {
 		try {
@@ -35,12 +32,15 @@ public class ScheduleJob {
 			CronTrigger trigger = newTrigger().withIdentity("trigger1", "group1").startNow()
 					.withSchedule(cronSchedule(schedule)).build();
 
-			logger.info("Schedule to run: " + schedule + "\n" + trigger.getExpressionSummary());
+			System.out.println("Schedule to run: " + schedule);
+			System.out.println(trigger.getExpressionSummary());
 
 			scheduler.scheduleJob(jobDetail, trigger);
 
 		} catch (SchedulerException se) {
 			se.printStackTrace();
+		} catch (Exception e){
+			e.printStackTrace();
 		}
 
 	}
@@ -50,8 +50,8 @@ public class ScheduleJob {
 		@Override
 		public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 			try {
-				Map<String, Double> tables = Main.getTablesAndCount();
 				logJob(jobExecutionContext);
+				Map<String, Double> tables = Main.getTablesAndCount();
 				
 				for (String table : tables.keySet()){
 					double count = tables.get(table);
@@ -59,7 +59,8 @@ public class ScheduleJob {
 				}
 				
 			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
+				System.err.println(e.getMessage());
+				e.printStackTrace();
 			}
 
 		}
