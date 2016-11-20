@@ -8,13 +8,13 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +42,14 @@ public class Main {
 
             JobDetail jobDetail = newJob(CopyDatabaseJob.class).build();
             
-            Trigger trigger = newTrigger()
+            CronTrigger trigger = newTrigger()
             	      .withIdentity("trigger1", "group1")
             	      .startNow()
-            	      .withSchedule(cronSchedule("0 0 5 ? * ?"))            
+            	      .withSchedule(cronSchedule("0 * 22 * * ?"))            
             	      .build();
-
+            
+            logger.info(trigger.getExpressionSummary());
+            
             scheduler.scheduleJob(jobDetail, trigger);
 
         } catch (SchedulerException se) {
