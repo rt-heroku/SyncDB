@@ -41,6 +41,10 @@
 							<mainClass>com.heroku.syncdbs.TestViews</mainClass>
 							<name>main</name>
 						</program>
+						<program>
+							<mainClass>com.heroku.syncdbs.ScheduleJob</mainClass>
+							<name>schedule</name>
+						</program>
 					</programs>
 				</configuration>
 				<executions>

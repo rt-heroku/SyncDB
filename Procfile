@@ -1,1 +1,1 @@
-scheduler: java $JAVA_OPTS -cp target/classes:target/repo/*:target/repo/org/quartz-scheduler/quartz/2.2.1/quartz-2.2.1.jar:target/repo/org/slf4j/slf4j-api/1.6.6/slf4j-api-1.6.6.jar com.heroku.syncdbs.ScheduleJob
+scheduler: sh target/bin/schedule
