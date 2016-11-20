@@ -52,8 +52,6 @@ public class DBUtility {
 
                     }
 
-
-
                 }
                 finally {
                     if (rs!=null) rs.close();
