@@ -120,9 +120,6 @@ public class DataMover {
 
 			sql = "SELECT COUNT(*) FROM " + table;
 			PreparedStatement statementSrc = db.prepareStatement(sql);
-
-			System.out.println("DEBUG - " + sql);
-			
 			ResultSet rs = statementSrc.executeQuery();
 			
 			if (rs.next())

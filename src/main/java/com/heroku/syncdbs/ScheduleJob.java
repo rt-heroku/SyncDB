@@ -27,10 +27,10 @@ public class ScheduleJob {
 			JobDetail jobDetail = newJob(CopyDatabaseJob.class).build();
 
 			String schedule = "" + System.getenv("SCHEDULE_CRON");
-			System.out.println("schedule " + schedule);
+			String description = "CopyDatabase Job scheduled to run [" + schedule + "]";
 			
 			CronTrigger trigger = newTrigger().withIdentity("trigger1", "group1").startNow()
-					.withSchedule(cronSchedule(schedule)).build();
+					.withSchedule(cronSchedule(schedule)).withDescription(description).build();
 
 			System.out.println("Schedule to run: " + schedule);
 			System.out.println(trigger.getExpressionSummary());
@@ -55,7 +55,7 @@ public class ScheduleJob {
 				
 				for (String table : tables.keySet()){
 					int count = tables.get(table);
-					System.out.println("Creating job for TABLE[" + table + "] for " + count + " rows...");
+					System.out.println("Creating job for TABLE[" + table + "] with " + count + " rows...");
 				}
 				
 			} catch (Exception e) {
