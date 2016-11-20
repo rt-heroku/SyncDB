@@ -210,7 +210,7 @@ public class DataMover {
 			PreparedStatement statementTrg = null;
 			ResultSet rs = null;
 			int type = 0;
-			
+			boolean hasCommited = false;
 			try {
 					statementSrc = source.prepareForwardStatement(selectSQL.toString());
 					statementSrc.setFetchSize(10000);
@@ -220,6 +220,7 @@ public class DataMover {
 					System.out.println("Copying data ... ");
 
 					while (rs.next()) {
+						hasCommited = false;
 						statementTrg = target.prepareStatement(insertSQL.toString());
 						rows++;
 						
@@ -227,11 +228,14 @@ public class DataMover {
 	
 						if ((rows % 10000) == 0 ){
 							target.getConnection().commit();
-							System.out.println("TABLE [" + table + "] Rows -- " + rows);
+							hasCommited = true;							
 						}
+						if ((rows % 100000) == 0 )
+							System.out.println("TABLE [" + table + "] Rows -- " + rows);
 						statementTrg.close();
 					}
-					target.getConnection().commit();
+					if (!hasCommited)
+						target.getConnection().commit();
 					rs.close();
 					statementSrc.close();
 					System.out.println("TABLE [" + table + "] TOTAL Rows Inserted: " + rows);
@@ -293,7 +297,9 @@ public class DataMover {
 
 	private void copyTableData() throws DatabaseException {
 		for (String table : tables) {
+			long t1 = System.currentTimeMillis();
 			copyTable(table);
+			System.out.println("Table " + table + " copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 		}
 	}
 

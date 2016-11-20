@@ -6,7 +6,6 @@ import java.util.Calendar;
 
 import com.heroku.syncdbs.datamover.DataMover;
 import com.heroku.syncdbs.datamover.Database;
-import com.heroku.syncdbs.datamover.DatabaseException;
 import com.heroku.syncdbs.datamover.PostgreSQL;
 
 public class Main {
@@ -20,18 +19,13 @@ public class Main {
     
     public static void main(String[] args) throws Exception {
 		try {
-			
+			long t1 = System.currentTimeMillis();
 			System.out.println("Starting data mover ... " + getCurrentTime());
 			DataMover mover = new DataMover();
-
-			//gray database
 			Database source = new PostgreSQL();
-			//JADE database
 			Database target = new PostgreSQL();
 
 			connectUsingHerokuVars(source, target);
-
-//			connectUsingJdbcUrls(source, target);
 			
 			mover.setSource(source);
 			mover.setTarget(target);
@@ -50,8 +44,10 @@ public class Main {
 			target.close();
 			
 			System.out.println("Data mover ENDED!" +	getCurrentTime());
+		    long t2 = System.currentTimeMillis();
+		    System.out.println(" Took " + (t2 - t1) / 1000 + " seconds");
 			
-		} catch (DatabaseException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		}
