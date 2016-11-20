@@ -5,8 +5,10 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.Map;
 
+import org.json.simple.JSONObject;
 import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobDetail;
@@ -16,30 +18,38 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.MessageProperties;
+
 public class ScheduleJob {
+
+	final static ConnectionFactory factory = new ConnectionFactory();
 
 	public static void main(String[] args) {
 		try {
 			Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-			
+
 			scheduler.start();
 
 			JobDetail jobDetail = newJob(CopyDatabaseJob.class).build();
 
 			String schedule = "" + System.getenv("SCHEDULE_CRON");
 			String description = "CopyDatabase Job scheduled to run [" + schedule + "]";
-			
+
 			CronTrigger trigger = newTrigger().withIdentity("trigger1", "group1").startNow()
 					.withSchedule(cronSchedule(schedule)).withDescription(description).build();
 
 			System.out.println("Schedule to run: " + schedule);
 			System.out.println(trigger.getExpressionSummary());
 
+			factory.setUri(System.getenv("CLOUDAMQP_URL"));
 			scheduler.scheduleJob(jobDetail, trigger);
 
 		} catch (SchedulerException se) {
 			se.printStackTrace();
-		} catch (Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
@@ -47,17 +57,33 @@ public class ScheduleJob {
 
 	public static class CopyDatabaseJob implements Job {
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 			try {
 				logJob(jobExecutionContext);
 				Map<String, Integer> tables = Main.getTablesAndCount();
-				
-				for (String table : tables.keySet()){
+				Connection connection = factory.newConnection();
+				Channel channel = connection.createChannel();
+				String queueName = "" + System.getenv("QUEUE_NAME");
+				Map<String, Object> params = new HashMap<String, Object>();
+				params.put("x-ha-policy", "all");
+				channel.queueDeclare(queueName, true, false, false, params);
+
+				for (String table : tables.keySet()) {
 					int count = tables.get(table);
-					System.out.println("Creating job for TABLE[" + table + "] with " + count + " rows...");
+
+					JSONObject obj = new JSONObject();
+
+					obj.put("table", table);
+					obj.put("count", count);
+
+					channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN, obj.toJSONString().getBytes("UTF-8"));
+					System.out.println("Creating job for TABLE[" + table + "] with " + count + " rows... -- " + obj.toJSONString());
 				}
-				
+
+				connection.close();
+
 			} catch (Exception e) {
 				System.err.println(e.getMessage());
 				e.printStackTrace();
