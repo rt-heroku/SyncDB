@@ -25,23 +25,23 @@ public class Main {
 			Database source = new PostgreSQL();
 			Database target = new PostgreSQL();
 
-			connectUsingHerokuVars(source, target);
-			
-			mover.setSource(source);
-			mover.setTarget(target);
-			
-			if (isDebugEnabled()){
-				mover.printGeneralMetadata(source);
-				mover.printGeneralMetadata(target);
-			}
-			
-			source.getConnection().setAutoCommit(false);
-			target.getConnection().setAutoCommit(false);
-
-			mover.exportDatabase();
-			
-			source.close();
-			target.close();
+//			connectUsingHerokuVars(source, target);
+//			
+//			mover.setSource(source);
+//			mover.setTarget(target);
+//			
+//			if (isDebugEnabled()){
+//				mover.printGeneralMetadata(source);
+//				mover.printGeneralMetadata(target);
+//			}
+//			
+//			source.getConnection().setAutoCommit(false);
+//			target.getConnection().setAutoCommit(false);
+//
+//			mover.exportDatabase();
+//			
+//			source.close();
+//			target.close();
 			
 			System.out.println("Data mover ENDED!" +	getCurrentTime());
 		    long t2 = System.currentTimeMillis();
