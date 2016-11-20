@@ -20,7 +20,8 @@ public class QWorker {
 	}
 	
 	public static void main(String[] args) throws Exception {
-
+		QWorker q = new QWorker();
+		q.run();
 	}
 
 	public void run() throws Exception{
