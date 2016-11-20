@@ -80,9 +80,9 @@ public class Main {
 		connectToTarget(getTarget());
 	}
 	
-	protected static Map<String, Double> getTablesAndCount() throws Exception {
+	protected static Map<String, Integer> getTablesAndCount() throws Exception {
 		connectToSource();
-		Map<String, Double> m = mover.getTableNameAndRowCount(getSource());
+		Map<String, Integer> m = mover.getTableNameAndRowCount(getSource());
 		getSource().close();
 		return m;
 	}

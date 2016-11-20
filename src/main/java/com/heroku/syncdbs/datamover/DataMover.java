@@ -113,9 +113,9 @@ public class DataMover {
 		target.execute(sql);
 	}
 
-	public synchronized double getTableCount(Database db, String table) throws DatabaseException {
+	public synchronized int getTableCount(Database db, String table) throws DatabaseException {
 		String sql;
-		double count = 0;
+		int count = 0;
 		try{
 
 			sql = "SELECT COUNT(*) FROM " + table;
@@ -126,7 +126,7 @@ public class DataMover {
 			ResultSet rs = statementSrc.executeQuery();
 			
 			if (rs.next())
-				count = rs.getDouble(1);
+				count = rs.getInt(1);
 			rs.close();
 			statementSrc.close();
 			
@@ -137,14 +137,14 @@ public class DataMover {
 		return count;
 	}
 	
-	public synchronized Map<String, Double> getTableNameAndRowCount(Database db) throws Exception{
-		Map<String, Double> m = new HashMap<String, Double>();
+	public synchronized Map<String, Integer> getTableNameAndRowCount(Database db) throws Exception{
+		Map<String, Integer> m = new HashMap<String, Integer>();
 		Collection<String> list = db.listTables();
 		for (String table : list) {
 			try {
 				if (!table.startsWith("pg_")){
-					double count = getTableCount(db, table);
-					m.put("table", count);
+					int count = getTableCount(db, table);
+					m.put(table, count);
 				}
 			} catch (DatabaseException e) {
 				e.printStackTrace();

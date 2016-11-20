@@ -51,10 +51,10 @@ public class ScheduleJob {
 		public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 			try {
 				logJob(jobExecutionContext);
-				Map<String, Double> tables = Main.getTablesAndCount();
+				Map<String, Integer> tables = Main.getTablesAndCount();
 				
 				for (String table : tables.keySet()){
-					double count = tables.get(table);
+					int count = tables.get(table);
 					System.out.println("Creating job for TABLE[" + table + "] for " + count + " rows...");
 				}
 				
