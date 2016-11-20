@@ -117,14 +117,14 @@ public class DataMover {
 		String sql;
 		double count = 0;
 		try{
-			PreparedStatement statementSrc = null;
-			ResultSet rs = null;
 
 			sql = "SELECT COUNT(*) FROM " + table;
-			statementSrc = source.prepareForwardStatement(sql);
-			statementSrc.setFetchSize(10000);
-			rs = statementSrc.executeQuery();
+			PreparedStatement statementSrc = db.prepareStatement(sql);
 
+			System.out.println("DEBUG - " + sql);
+			
+			ResultSet rs = statementSrc.executeQuery();
+			
 			if (rs.next())
 				count = rs.getDouble(0);
 			rs.close();
