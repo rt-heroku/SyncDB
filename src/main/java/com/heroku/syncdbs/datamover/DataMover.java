@@ -22,7 +22,9 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Generic data mover class. This class is designed to move data from one
@@ -111,6 +113,47 @@ public class DataMover {
 		target.execute(sql);
 	}
 
+	public synchronized double getTableCount(Database db, String table) throws DatabaseException {
+		String sql;
+		double count = 0;
+		try{
+			PreparedStatement statementSrc = null;
+			ResultSet rs = null;
+
+			sql = "SELECT COUNT(*) FROM " + table;
+			statementSrc = source.prepareForwardStatement(sql);
+			statementSrc.setFetchSize(10000);
+			rs = statementSrc.executeQuery();
+
+			if (rs.next())
+				count = rs.getDouble(0);
+			rs.close();
+			statementSrc.close();
+			
+		}catch(Exception e){
+			System.out.println("Error while counting rows in table [" + table + "] - " + e.getMessage());
+			throw new DatabaseException(e);
+		}
+		return count;
+	}
+	
+	public synchronized Map<String, Double> getTableNameAndRowCount(Database db) throws Exception{
+		Map<String, Double> m = new HashMap<String, Double>();
+		Collection<String> list = db.listTables();
+		for (String table : list) {
+			try {
+				if (!table.startsWith("pg_")){
+					double count = getTableCount(db, table);
+					m.put("table", count);
+				}
+			} catch (DatabaseException e) {
+				e.printStackTrace();
+				throw new Exception(e);
+			}
+		}
+		return m;
+	}
+	
 	/**
 	 * Create all of the tables in the database. This is done by looping over
 	 * the list of tables and calling createTable for each.
@@ -206,8 +249,8 @@ public class DataMover {
 
 		private void copyFromSelectIntoInsert(String selectSQL, String insertSQL, String table)
 				throws DatabaseException {
-			PreparedStatement statementSrc = null;
 			PreparedStatement statementTrg = null;
+			PreparedStatement statementSrc = null;
 			ResultSet rs = null;
 			int type = 0;
 			boolean hasCommited = false;

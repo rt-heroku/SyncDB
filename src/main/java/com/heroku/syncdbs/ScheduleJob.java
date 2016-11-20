@@ -5,6 +5,7 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.text.SimpleDateFormat;
+import java.util.Map;
 
 import org.quartz.CronTrigger;
 import org.quartz.Job;
@@ -23,13 +24,14 @@ public class ScheduleJob {
 	public static void main(String[] args) {
 		try {
 			Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-
+			
 			scheduler.start();
 
 			JobDetail jobDetail = newJob(CopyDatabaseJob.class).build();
 
 			String schedule = "" + System.getenv("SCHEDULE_CRON");
-System.out.println("schedule " + schedule);
+			System.out.println("schedule " + schedule);
+			
 			CronTrigger trigger = newTrigger().withIdentity("trigger1", "group1").startNow()
 					.withSchedule(cronSchedule(schedule)).build();
 
@@ -48,13 +50,24 @@ System.out.println("schedule " + schedule);
 		@Override
 		public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 			try {
-				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-				System.out.println("Running Job: " + jobExecutionContext.getJobDetail().getDescription());
-				System.out.println("Next Job will run on: " + sdf.format(jobExecutionContext.getNextFireTime()));
+				Map<String, Double> tables = Main.getTablesAndCount();
+				logJob(jobExecutionContext);
+				
+				for (String table : tables.keySet()){
+					double count = tables.get(table);
+					System.out.println("Creating job for TABLE[" + table + "] for " + count + " rows...");
+				}
+				
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
 			}
 
+		}
+
+		private void logJob(JobExecutionContext jobExecutionContext) {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+			System.out.println("Running Job: " + jobExecutionContext.getJobDetail().getDescription());
+			System.out.println("Next Job will run on: " + sdf.format(jobExecutionContext.getNextFireTime()));
 		}
 
 	}
