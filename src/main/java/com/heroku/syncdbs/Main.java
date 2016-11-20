@@ -18,13 +18,13 @@ public class Main {
     }
     
     public static void main(String[] args) throws Exception {
-		try {
-			long t1 = System.currentTimeMillis();
-			System.out.println("Starting data mover ... " + getCurrentTime());
-			DataMover mover = new DataMover();
-			Database source = new PostgreSQL();
-			Database target = new PostgreSQL();
-
+//		try {
+//			long t1 = System.currentTimeMillis();
+//			System.out.println("Starting data mover ... " + getCurrentTime());
+//			DataMover mover = new DataMover();
+//			Database source = new PostgreSQL();
+//			Database target = new PostgreSQL();
+//
 //			connectUsingHerokuVars(source, target);
 //			
 //			mover.setSource(source);
@@ -42,16 +42,16 @@ public class Main {
 //			
 //			source.close();
 //			target.close();
-			
-			System.out.println("Data mover ENDED!" +	getCurrentTime());
-		    long t2 = System.currentTimeMillis();
-		    System.out.println(" Took " + (t2 - t1) / 1000 + " seconds");
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw e;
-		}
-
+//			
+//			System.out.println("Data mover ENDED!" +	getCurrentTime());
+//		    long t2 = System.currentTimeMillis();
+//		    System.out.println(" Took " + (t2 - t1) / 1000 + " seconds");
+//			
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			throw e;
+//		}
+System.out.println("RUN RUN RUN!!!!!");
     }
 	protected static void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
 		source.connectString("jdbc:postgresql://ec2-52-73-169-99.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
