@@ -27,7 +27,7 @@
                     <assembleDirectory>target</assembleDirectory> 
                     <programs>
                         <program>
-                            <mainClass>com.heroku.syncdbs.Main</mainClass>
+                            <mainClass>com.heroku.syncdbs.TestViews</mainClass>
                             <name>main</name>
                         </program>
                     </programs>
