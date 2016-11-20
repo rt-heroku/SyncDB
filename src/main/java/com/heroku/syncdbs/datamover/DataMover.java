@@ -126,7 +126,7 @@ public class DataMover {
 			ResultSet rs = statementSrc.executeQuery();
 			
 			if (rs.next())
-				count = rs.getDouble(0);
+				count = rs.getDouble(1);
 			rs.close();
 			statementSrc.close();
 			
