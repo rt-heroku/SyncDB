@@ -1,1 +1,1 @@
-web: exec java $JAVA_OPTS -classpath "/app/target/repo/org/postgresql/postgresql/9.4.1211.jre7/postgresql-9.4.1211.jre7.jar:/app/target/repo/com/heroku/syncdbs/sync-dbs/1.0-SNAPSHOT/sync-dbs-1.0-SNAPSHOT.jar" -Dapp.name="main" -Dapp.repo="/app/target/repo" -Dbasedir="/app" com.heroku.syncdbs.Main
+scheduler: java $JAVA_OPTS -cp target/classes:target/dependency/* com.heroku.syncdbs.Main
