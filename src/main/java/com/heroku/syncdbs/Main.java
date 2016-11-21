@@ -33,7 +33,9 @@ public class Main {
 			System.out.println("Starting data mover ... " + getCurrentTime());
 
 			connectUsingHerokuVars(getSource(), getTarget());
-
+			
+//			connectUsingJdbcUrls(source, target);
+			
 			getMover().setSource(getSource());
 			getMover().setTarget(getTarget());
 
@@ -42,8 +44,8 @@ public class Main {
 				getMover().printGeneralMetadata(getTarget());
 			}
 
-			getSource().getConnection().setAutoCommit(false);
-			getTarget().getConnection().setAutoCommit(false);
+//			getSource().getConnection().setAutoCommit(false);
+//			getTarget().getConnection().setAutoCommit(false);
 
 			getMover().exportDatabase();
 
@@ -63,8 +65,10 @@ public class Main {
 	protected static void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
 		source.connectString(
 				"jdbc:postgresql://ec2-52-73-169-99.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+//		target.connectString(
+//				"jdbc:postgresql://ec2-52-200-41-184.compute-1.amazonaws.com:5432/d9mgkh21nofekg?user=uegso4e2g4jqof&password=p991t3gs4ehj3ublia03ssn3jgs&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 		target.connectString(
-				"jdbc:postgresql://ec2-52-200-41-184.compute-1.amazonaws.com:5432/d9mgkh21nofekg?user=uegso4e2g4jqof&password=p991t3gs4ehj3ublia03ssn3jgs&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+				"jdbc:postgresql://ec2-34-192-225-110.compute-1.amazonaws.com:5432/ddtj1lkfhi8u5p?user=u2cniv4vh0r7f8&password=pbqi7smqlclupn7k8agcccmo17h&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 	}
 
 	protected static void connectUsingHerokuVars(Database source, Database target) throws SQLException {

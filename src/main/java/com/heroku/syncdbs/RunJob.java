@@ -18,6 +18,7 @@ public class RunJob {
 	public static void main(String[] args) {
 		try {
 			Map<String, Integer> tables = Main.getTablesAndCount();
+
 			Connection connection = factory.newConnection();
 			Channel channel = connection.createChannel();
 			String queueName = "" + System.getenv("QUEUE_NAME");
