@@ -35,6 +35,7 @@ public class QWorker {
 		String queueName = "" + System.getenv("QUEUE_NAME");
 		params.put("x-ha-policy", "all");
 		channel.queueDeclare(queueName, true, false, false, params);
+	    channel.basicQos(1); 
 		
 		QueueingConsumer consumer = new QueueingConsumer(channel);
 		channel.basicConsume(queueName, false, consumer);
@@ -47,7 +48,7 @@ public class QWorker {
 
 				System.out.println("QWorker ---- Message Received: " + jobj.toJSONString());
 				Thread.sleep(2);
-//				Main.copyTable(jobj.get("table").toString());
+				Main.copyTable(jobj.get("table").toString());
 				channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 			}
 		}
