@@ -26,19 +26,21 @@ public class RunJob {
 			params.put("x-ha-policy", "all");
 			channel.queueDeclare(queueName, true, false, false, params);
 
-//			for (String table : tables.keySet()) {
+			for (String table : tables.keySet()) {
 				int count = tables.size();
 
 				JSONObject obj = new JSONObject();
 
-				obj.put("table", "ALL");
+//				obj.put("table", "ALL");
+				obj.put("table", table);
 				obj.put("count", count);
 
 				channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
 						obj.toJSONString().getBytes("UTF-8"));
-				System.out.println("Running job Manually for TABLE[ALL] with " + count + " rows... -- "
+				
+				System.out.println("Running job Manually for TABLE[" + table + "] with " + count + " rows... -- "
 						+ obj.toJSONString());
-//			}
+			}
 
 			connection.close();
 

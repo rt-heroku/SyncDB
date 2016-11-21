@@ -44,9 +44,6 @@ public class Main {
 				getMover().printGeneralMetadata(getTarget());
 			}
 
-//			getSource().getConnection().setAutoCommit(false);
-//			getTarget().getConnection().setAutoCommit(false);
-
 			getMover().exportDatabase();
 
 			getSource().close();
@@ -62,6 +59,37 @@ public class Main {
 		}
 	}
 
+	protected static void copyTable(String table) throws Exception {
+		try {
+			long t1 = System.currentTimeMillis();
+			System.out.println("Starting data mover for table [" + table + "] ... " + getCurrentTime());
+
+			connectUsingHerokuVars(getSource(), getTarget());
+			
+//			connectUsingJdbcUrls(source, target);
+			
+			getMover().setSource(getSource());
+			getMover().setTarget(getTarget());
+
+			if (isDebugEnabled()) {
+				getMover().printGeneralMetadata(getSource());
+				getMover().printGeneralMetadata(getTarget());
+			}
+
+			getMover().exportDatabase(table);
+
+			getSource().close();
+			getTarget().close();
+
+			System.out.println("Data mover ENDED for table [" + table + "] !" + getCurrentTime());
+			long t2 = System.currentTimeMillis();
+			System.out.println(" Took " + (t2 - t1) / 1000 + " seconds to run the job!");
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
 	protected static void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
 		source.connectString(
 				"jdbc:postgresql://ec2-52-73-169-99.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");

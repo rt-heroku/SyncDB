@@ -363,6 +363,12 @@ public class DataMover {
 		copyTableData();
 	}
 
+	public void exportDatabase(String table) throws DatabaseException {
+		createTable(table);
+		tables.add(table);
+		copyTableData();
+	}
+
 	public void copyTableData(String table) throws DatabaseException {
 		System.out.println("Deleting data in table " + table);
 		truncateTable(table);
