@@ -331,7 +331,7 @@ public class DataMover {
 			}
 			
 			if (isDebugEnabled()) System.out.println(statementTrg.toString());
-//						statementTrg.execute();
+			statementTrg.execute();
 			return type;
 		}
 
