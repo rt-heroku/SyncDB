@@ -12,13 +12,13 @@ import com.rabbitmq.client.MessageProperties;
 
 public class RunJob {
 
-	final static ConnectionFactory factory = new ConnectionFactory();
-
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
 		try {
-			Map<String, Integer> tables = Main.getTablesAndCount();
 
+			ConnectionFactory factory = new ConnectionFactory();
+			factory.setUri(System.getenv("CLOUDAMQP_URL"));
+			
 			Connection connection = factory.newConnection();
 			Channel channel = connection.createChannel();
 			String queueName = "" + System.getenv("QUEUE_NAME");
@@ -26,12 +26,12 @@ public class RunJob {
 			params.put("x-ha-policy", "all");
 			channel.queueDeclare(queueName, true, false, false, params);
 
+			Map<String, Integer> tables = Main.getTablesAndCount();
 			for (String table : tables.keySet()) {
 				int count = tables.size();
 
 				JSONObject obj = new JSONObject();
 
-//				obj.put("table", "ALL");
 				obj.put("table", table);
 				obj.put("count", count);
 
