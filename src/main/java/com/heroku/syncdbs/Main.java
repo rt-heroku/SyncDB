@@ -14,20 +14,21 @@ public class Main {
 	public static String SOURCE_VAR = "SOURCE_VAR";
 	public static String TARGET_VAR = "TARGET_VAR";
 
-	private static DataMover mover = new DataMover();
-	private static Database source = new PostgreSQL();
-	private static Database target = new PostgreSQL();
+	private DataMover mover = new DataMover();
+	private Database source = new PostgreSQL();
+	private Database target = new PostgreSQL();
 
-	protected static boolean isDebugEnabled() {
+	protected boolean isDebugEnabled() {
 		String ret = System.getenv("DEBUG") + "";
 		return ret.equals("TRUE");
 	}
 
 	public static void main(String[] args) throws Exception {
-		copyData();
+		Main main = new Main();
+		main.copyData();
 	}
 
-	protected static void copyData() throws Exception {
+	protected void copyData() throws Exception {
 		try {
 			long t1 = System.currentTimeMillis();
 			System.out.println("Starting data mover ... " + getCurrentTime());
@@ -59,7 +60,7 @@ public class Main {
 		}
 	}
 
-	protected static void copyTable(String table) throws Exception {
+	protected void copyTable(String table) throws Exception {
 		try {
 			long t1 = System.currentTimeMillis();
 			System.out.println("Starting data mover for table [" + table + "] ... " + getCurrentTime());
@@ -90,7 +91,7 @@ public class Main {
 			throw e;
 		}
 	}
-	protected static void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
+	protected void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
 		source.connectString(
 				"jdbc:postgresql://ec2-52-73-169-99.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 //		target.connectString(
@@ -99,33 +100,33 @@ public class Main {
 				"jdbc:postgresql://ec2-34-192-225-110.compute-1.amazonaws.com:5432/ddtj1lkfhi8u5p?user=u2cniv4vh0r7f8&password=pbqi7smqlclupn7k8agcccmo17h&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 	}
 
-	protected static void connectUsingHerokuVars(Database source, Database target) throws SQLException {
+	protected void connectUsingHerokuVars(Database source, Database target) throws SQLException {
 		connectToSource(source);
 		connectToTarget(target);
 	}
 
-	protected static void connectToSource() throws SQLException{
+	protected void connectToSource() throws SQLException{
 		connectToSource(getSource());
 	}
 	
-	protected static void connectToTarget() throws SQLException{
+	protected void connectToTarget() throws SQLException{
 		connectToTarget(getTarget());
 	}
 	
-	protected static Map<String, Integer> getTablesAndCount() throws Exception {
+	protected Map<String, Integer> getTablesAndCount() throws Exception {
 		connectToSource();
 		Map<String, Integer> m = mover.getTableNameAndRowCount(getSource());
 		getSource().close();
 		return m;
 	}
 	
-	protected static void connectToTarget(Database target) throws SQLException {
+	protected void connectToTarget(Database target) throws SQLException {
 		String target_var = System.getenv(TARGET_VAR);
 		target.connect(target_var);
 		System.out.println("Connected to DATABASE: " + target_var);
 	}
 
-	protected static void connectToSource(Database source) throws SQLException {
+	protected void connectToSource(Database source) throws SQLException {
 		String source_var = System.getenv(SOURCE_VAR);
 		source.connect(source_var);
 		System.out.println("Connected to DATABASE: " + source_var);
@@ -137,28 +138,28 @@ public class Main {
 		return sdf.format(cal.getTime());
 	}
 
-	public static DataMover getMover() {
-		return mover;
+	public DataMover getMover() {
+		return this.mover;
 	}
 
-	public static void setMover(DataMover mover) {
-		Main.mover = mover;
+	public void setMover(DataMover mover) {
+		this.mover = mover;
 	}
 
-	public static Database getSource() {
-		return source;
+	public Database getSource() {
+		return this.source;
 	}
 
-	public static void setSource(Database source) {
-		Main.source = source;
+	public void setSource(Database source) {
+		this.source = source;
 	}
 
-	public static Database getTarget() {
-		return target;
+	public Database getTarget() {
+		return this.target;
 	}
 
-	public static void setTarget(Database target) {
-		Main.target = target;
+	public void setTarget(Database target) {
+		this.target = target;
 	}
 
 }

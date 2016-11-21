@@ -26,7 +26,8 @@ public class RunJob {
 			params.put("x-ha-policy", "all");
 			channel.queueDeclare(queueName, true, false, false, params);
 
-			Map<String, Integer> tables = Main.getTablesAndCount();
+			Main main = new Main();
+			Map<String, Integer> tables = main.getTablesAndCount();
 			for (String table : tables.keySet()) {
 				int count = tables.get(table).intValue();
 

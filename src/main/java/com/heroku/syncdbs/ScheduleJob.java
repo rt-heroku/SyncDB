@@ -62,7 +62,8 @@ public class ScheduleJob {
 		public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 			try {
 				logJob(jobExecutionContext);
-				Map<String, Integer> tables = Main.getTablesAndCount();
+				Main main = new Main();
+				Map<String, Integer> tables = main.getTablesAndCount();
 				Connection connection = factory.newConnection();
 				Channel channel = connection.createChannel();
 				String queueName = "" + System.getenv("QUEUE_NAME");
