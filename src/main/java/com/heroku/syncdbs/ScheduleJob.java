@@ -79,7 +79,7 @@ public class ScheduleJob {
 					obj.put("count", count);
 
 					channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN, obj.toJSONString().getBytes("UTF-8"));
-					System.out.println("Creating job for TABLE[" + table + "] with " + count + " rows... -- " + obj.toJSONString());
+					System.out.println("Creating SCHEDULED job for TABLE[" + table + "] with " + count + " rows... -- " + obj.toJSONString());
 				}
 
 				connection.close();

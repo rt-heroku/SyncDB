@@ -28,7 +28,7 @@ public class RunJob {
 
 			Map<String, Integer> tables = Main.getTablesAndCount();
 			for (String table : tables.keySet()) {
-				int count = tables.size();
+				int count = tables.get(table).intValue();
 
 				JSONObject obj = new JSONObject();
 
@@ -38,7 +38,7 @@ public class RunJob {
 				channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
 						obj.toJSONString().getBytes("UTF-8"));
 				
-				System.out.println("Running job Manually for TABLE[" + table + "] with " + count + " rows... -- "
+				System.out.println("MANUALLY Publishing job for TABLE[" + table + "] with " + count + " rows... -- "
 						+ obj.toJSONString());
 			}
 
