@@ -49,7 +49,7 @@
 					<assembleDirectory>target</assembleDirectory>
 					<programs>
 						<program>
-							<mainClass>com.heroku.syncdbs.TestViews</mainClass>
+							<mainClass>com.heroku.syncdbs.Main</mainClass>
 							<name>main</name>
 						</program>
 						<program>
@@ -59,6 +59,10 @@
 						<program>
 							<mainClass>com.heroku.syncdbs.QWorker</mainClass>
 							<name>worker</name>
+						</program>
+						<program>
+							<mainClass>com.heroku.syncdbs.RunJob</mainClass>
+							<name>run</name>
 						</program>
 					</programs>
 				</configuration>

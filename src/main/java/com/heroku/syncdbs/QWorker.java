@@ -46,7 +46,7 @@ public class QWorker {
 				JSONObject jobj = (JSONObject) parser.parse(msg);
 
 				System.out.println("QWorker ---- Message Received: " + jobj.toJSONString());
-				
+				Main.copyData();
 				channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 			}
 		}
