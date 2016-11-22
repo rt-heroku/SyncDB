@@ -66,6 +66,9 @@ public class Main {
 			long t1 = System.currentTimeMillis();
 			System.out.println("Starting data mover [" + job + "] for table [" + table + "] ... " + getCurrentTime());
 			
+			validateConnection("target");
+			validateConnection("source");
+			
 			getMover().copyChunkTable(table, offset, limit);
 			
 			System.out.println("Data mover [" + job + "] ENDED for table [" + table + "] !" + getCurrentTime());
