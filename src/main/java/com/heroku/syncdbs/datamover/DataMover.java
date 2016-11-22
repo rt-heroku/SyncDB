@@ -95,7 +95,7 @@ public class DataMover {
 		String sql;
 
 		try {
-			sql = source.generateDrop(table);
+			sql = target.generateDrop(table);
 			target.execute(sql);
 			System.out.println("TABLE DROPPED: " + table);
 			if (isDebugEnabled())
@@ -365,8 +365,10 @@ public class DataMover {
 
 	public void exportDatabase(String table) throws DatabaseException {
 		createTable(table);
-		tables.add(table);
-		copyTableData();
+		long t1 = System.currentTimeMillis();
+		copyTable(table);
+		System.out
+				.println("Table " + table + " copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 	}
 
 	public void copyTableData(String table) throws DatabaseException {

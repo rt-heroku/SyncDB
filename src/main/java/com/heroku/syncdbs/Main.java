@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.heroku.syncdbs.datamover.DataMover;
 import com.heroku.syncdbs.datamover.Database;
+import com.heroku.syncdbs.datamover.DatabaseException;
 import com.heroku.syncdbs.datamover.PostgreSQL;
 
 public class Main {
@@ -65,12 +66,7 @@ public class Main {
 			long t1 = System.currentTimeMillis();
 			System.out.println("Starting data mover for table [" + table + "] ... " + getCurrentTime());
 
-			connectUsingHerokuVars(getSource(), getTarget());
-			
-//			connectUsingJdbcUrls(source, target);
-			
-			getMover().setSource(getSource());
-			getMover().setTarget(getTarget());
+			connectBothDBs();			
 
 			if (isDebugEnabled()) {
 				getMover().printGeneralMetadata(getSource());
@@ -91,11 +87,17 @@ public class Main {
 			throw e;
 		}
 	}
+	protected void recreateTable(String table) throws Exception {
+		try {
+			getMover().createTable(table);
+		} catch (DatabaseException e) {
+			throw new Exception(e);
+		}
+	}
+
 	protected void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
 		source.connectString(
 				"jdbc:postgresql://ec2-52-73-169-99.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
-//		target.connectString(
-//				"jdbc:postgresql://ec2-52-200-41-184.compute-1.amazonaws.com:5432/d9mgkh21nofekg?user=uegso4e2g4jqof&password=p991t3gs4ehj3ublia03ssn3jgs&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 		target.connectString(
 				"jdbc:postgresql://ec2-34-192-225-110.compute-1.amazonaws.com:5432/ddtj1lkfhi8u5p?user=u2cniv4vh0r7f8&password=pbqi7smqlclupn7k8agcccmo17h&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 	}
@@ -103,6 +105,26 @@ public class Main {
 	protected void connectUsingHerokuVars(Database source, Database target) throws SQLException {
 		connectToSource(source);
 		connectToTarget(target);
+	}
+
+	public void connectBothDBs() throws Exception{
+		try {
+			connectUsingHerokuVars(getSource(), getTarget());
+			getMover().setSource(getSource());
+			getMover().setTarget(getTarget());
+		} catch (SQLException e) {
+			throw e;
+		}
+	}
+
+	public void closeBothConnections() throws Exception{
+		try {
+			closeConnectionToSource();
+			closeConnectionToTarget();
+			connectToTarget();
+		} catch (SQLException e) {
+			throw e;
+		}
 	}
 
 	protected void connectToSource() throws SQLException{
@@ -113,13 +135,34 @@ public class Main {
 		connectToTarget(getTarget());
 	}
 	
-	protected Map<String, Integer> getTablesAndCount() throws Exception {
-		connectToSource();
-		Map<String, Integer> m = mover.getTableNameAndRowCount(getSource());
+	protected void closeConnectionToSource() throws Exception{
 		getSource().close();
-		return m;
+	}
+
+	protected void closeConnectionToTarget() throws Exception{
+		getTarget().close();
 	}
 	
+	protected Map<String, Integer> getTablesAndCount() throws Exception {
+		try{
+			validateConnection("source");
+		}catch (SQLException e) {
+			throw e;
+		}
+		return mover.getTableNameAndRowCount(getSource());
+	}
+	
+	private void validateConnection(String db) throws SQLException{
+		if (db.equals("source"))
+			if (source.getConnection().isClosed())
+				connectToSource(source);
+
+		if (db.equals("target"))
+			if (target.getConnection().isClosed())
+				connectToSource(target);
+		
+	}
+
 	protected void connectToTarget(Database target) throws SQLException {
 		String target_var = System.getenv(TARGET_VAR);
 		target.connect(target_var);
@@ -161,5 +204,6 @@ public class Main {
 	public void setTarget(Database target) {
 		this.target = target;
 	}
+
 
 }

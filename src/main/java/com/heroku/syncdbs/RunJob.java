@@ -8,7 +8,6 @@ import org.json.simple.JSONObject;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.MessageProperties;
 
 public class RunJob {
 
@@ -27,34 +26,55 @@ public class RunJob {
 			channel.queueDeclare(queueName, true, false, false, params);
 
 			Main main = new Main();
+			main.connectBothDBs();
 			Map<String, Integer> tables = main.getTablesAndCount();
+
 			for (String table : tables.keySet()) {
 				int count = tables.get(table).intValue();
-				int value = 0;
 				JSONObject obj = new JSONObject();
 
-				obj.put("table", table);
-				obj.put("count", count);
-				obj.put("offset", value);
-				//Send chunks of 100k rows in the message using offset
-//				if (count >= 1000000){
-//					int i = 100000;
-//					
-//				}
-				channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
-						obj.toJSONString().getBytes("UTF-8"));
-				
-				System.out.println("MANUALLY Publishing job for TABLE[" + table + "] with " + count + " rows... -- "
-						+ obj.toJSONString());
-			}
+				int chunk = 100000;
+				int job = 0;
+				int jobChunk = count;
+				int offset = chunk;
 
+				main.recreateTable(table);
+
+				while ( jobChunk > 0){
+					
+					int limit = jobChunk;
+					if ((jobChunk - chunk) > 0) 
+						limit = chunk;
+					jobChunk = jobChunk - chunk;
+					job++;
+
+					obj.put("table", table);
+					obj.put("count", count);
+					obj.put("offset", offset);
+					obj.put("limit", limit);
+					obj.put("job", job);
+					
+					System.out.println("job number[" + job + "] - OFFSET: " + offset + " - LIMIT: " + limit);
+					
+//					channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
+//							obj.toJSONString().getBytes("UTF-8"));
+
+					System.out.println("MANUALLY Publishing job number[" + job + "] for TABLE[" + table + "] with total " + count + 
+							" rows - OFFSET: " + offset + " - LIMIT: " + limit + "\n"
+							+ obj.toJSONString());
+
+					offset = offset + chunk;
+				}
+				
+			}
+			
+			main.closeBothConnections();
 			connection.close();
 
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
 			e.printStackTrace();
 		}
-
 	}
 
 }

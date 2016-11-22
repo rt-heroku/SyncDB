@@ -40,6 +40,7 @@ public class QWorker {
 		QueueingConsumer consumer = new QueueingConsumer(channel);
 		channel.basicConsume(queueName, false, consumer);
 
+		Main main = new Main();
 		while (true) {
 			QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 			if (delivery != null) {
@@ -47,8 +48,6 @@ public class QWorker {
 				JSONObject jobj = (JSONObject) parser.parse(msg);
 
 				System.out.println("QWorker ---- Message Received: " + jobj.toJSONString());
-				Thread.sleep(2);
-				Main main = new Main();
 				main.copyTable(jobj.get("table").toString());
 				channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 			}
