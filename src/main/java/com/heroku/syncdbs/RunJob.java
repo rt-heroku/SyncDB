@@ -30,12 +30,17 @@ public class RunJob {
 			Map<String, Integer> tables = main.getTablesAndCount();
 			for (String table : tables.keySet()) {
 				int count = tables.get(table).intValue();
-
+				int value = 0;
 				JSONObject obj = new JSONObject();
 
 				obj.put("table", table);
 				obj.put("count", count);
-
+				obj.put("offset", value);
+				//Send chunks of 100k rows in the message using offset
+//				if (count >= 1000000){
+//					int i = 100000;
+//					
+//				}
 				channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
 						obj.toJSONString().getBytes("UTF-8"));
 				
