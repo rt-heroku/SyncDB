@@ -40,10 +40,10 @@ public class QWorker {
 		QueueingConsumer consumer = new QueueingConsumer(channel);
 		channel.basicConsume(queueName, false, consumer);
 
-		Main main = new Main();
 		while (true) {
 			QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 			if (delivery != null) {
+				Main main = new Main();
 				String msg = new String(delivery.getBody(), "UTF-8");
 				JSONObject jobj = (JSONObject) parser.parse(msg);
 
@@ -53,7 +53,10 @@ public class QWorker {
 				Integer job = new Integer(jobj.get("job").toString());
 
 				System.out.println("QWorker Job ID[" + job + "] ---- Message Received: " + jobj.toJSONString());
+				
+				main.connectBothDBs();
 				main.copyTableChunk(table, offset, limit, job);
+				main.closeBothConnections();
 				
 				channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 			}
