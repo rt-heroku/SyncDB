@@ -63,7 +63,7 @@ public class ScheduleJob {
 			try {
 				logJob(jobExecutionContext);
 				ConnectionFactory factory = new ConnectionFactory();
-				factory.setUri(System.getenv("CLOUDAMQP_URL"));
+				factory.setUri(System.getenv("RABBITMQ_BIGWIG_URL"));
 
 				Connection connection = factory.newConnection();
 				Channel channel = connection.createChannel();

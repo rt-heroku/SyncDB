@@ -26,7 +26,7 @@ public class QWorker {
 
 	public void run() throws Exception{
 		ConnectionFactory factory = new ConnectionFactory();
-		factory.setUri(System.getenv("CLOUDAMQP_URL"));
+		factory.setUri(System.getenv("RABBITMQ_BIGWIG_URL"));
 
 		Map<String, Object> params = new HashMap<String, Object>();
 		Connection connection = factory.newConnection();
