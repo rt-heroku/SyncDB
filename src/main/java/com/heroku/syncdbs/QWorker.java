@@ -48,9 +48,9 @@ public class QWorker {
 				JSONObject jobj = (JSONObject) parser.parse(msg);
 
 				String table =  (String) jobj.get("table");
-				Integer offset = (Integer) jobj.get("offset");
-				Integer limit = (Integer) jobj.get("limit");
-				Integer job = (Integer) jobj.get("job");
+				Integer offset = new Integer(jobj.get("offset").toString());
+				Integer limit = new Integer(jobj.get("limit").toString());
+				Integer job = new Integer(jobj.get("job").toString());
 
 				System.out.println("QWorker Job ID[" + job + "] ---- Message Received: " + jobj.toJSONString());
 				main.copyTableChunk(table, offset, limit, job);
