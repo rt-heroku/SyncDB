@@ -54,14 +54,12 @@ public class RunJob {
 					obj.put("limit", limit);
 					obj.put("job", job);
 					
-					System.out.println("job number[" + job + "] - OFFSET: " + offset + " - LIMIT: " + limit);
-					
 //					channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
 //							obj.toJSONString().getBytes("UTF-8"));
 
 					System.out.println("MANUALLY Publishing job number[" + job + "] for TABLE[" + table + "] with total " + count + 
-							" rows - OFFSET: " + offset + " - LIMIT: " + limit + "\n"
-							+ obj.toJSONString());
+							" rows - OFFSET: " + offset + " - LIMIT: " + limit);
+//					System.out.println(obj.toJSONString());
 
 					offset = offset + chunk;
 				}
