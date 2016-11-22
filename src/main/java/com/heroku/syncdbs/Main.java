@@ -61,6 +61,22 @@ public class Main {
 		}
 	}
 
+	protected void copyTableChunk(String table, Integer offset, Integer limit, Integer job) throws Exception {
+		try {
+			long t1 = System.currentTimeMillis();
+			System.out.println("Starting data mover [" + job + "] for table [" + table + "] ... " + getCurrentTime());
+			
+			getMover().copyChunkTable(table, offset, limit);
+			
+			System.out.println("Data mover [" + job + "] ENDED for table [" + table + "] !" + getCurrentTime());
+			long t2 = System.currentTimeMillis();
+			System.out.println(" Took " + (t2 - t1) / 1000 + " seconds to run the job!");
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
 	protected void copyTable(String table) throws Exception {
 		try {
 			long t1 = System.currentTimeMillis();

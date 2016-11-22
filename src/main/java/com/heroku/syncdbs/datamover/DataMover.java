@@ -208,7 +208,7 @@ public class DataMover {
 	 *             If a database error occurs.
 	 */
 
-	private synchronized void copyTable(String table) throws DatabaseException {
+	private synchronized void copyTable(String table, int offset, int limit) throws DatabaseException {
 		StringBuffer selectSQL = new StringBuffer();
 		StringBuffer insertSQL = new StringBuffer();
 		StringBuffer values = new StringBuffer();
@@ -242,6 +242,12 @@ public class DataMover {
 			System.out.println("DEBUG SQL: " + insertSQL);
 			System.out.println("DEBUG SQL: " + selectSQL);
 		}
+
+		if (offset > 0)
+			selectSQL.append(" OFFSET " + offset);
+		
+		if (limit > 0)
+			selectSQL.append(" LIMIT " + limit);
 
 		copyFromSelectIntoInsert(selectSQL.toString(), insertSQL.toString(), table);
 	}
@@ -349,7 +355,7 @@ public class DataMover {
 	private void copyTableData() throws DatabaseException {
 		for (String table : tables) {
 			long t1 = System.currentTimeMillis();
-			copyTable(table);
+			copyTable(table, 0, 0);
 			System.out
 					.println("Table " + table + " copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 		}
@@ -364,12 +370,16 @@ public class DataMover {
 		copyTableData();
 	}
 
+	public void copyChunkTable(String table, int offset, int limit) throws DatabaseException{
+		long t1 = System.currentTimeMillis();
+		copyTable(table, offset, limit);
+		System.out.println("Table " + table + " chunk size[" + limit + "] copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
+	}
 	public void exportDatabase(String table) throws DatabaseException {
 		createTable(table);
 		long t1 = System.currentTimeMillis();
-		copyTable(table);
-		System.out
-				.println("Table " + table + " copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
+		copyTable(table, 0, 0);
+		System.out.println("Table " + table + " copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 	}
 
 	public void copyTableData(String table) throws DatabaseException {
@@ -377,7 +387,7 @@ public class DataMover {
 		truncateTable(table);
 
 		System.out.println("About to COPY table data - " + table);
-		copyTable(table.toLowerCase());
+		copyTable(table.toLowerCase(), 0, 0);
 	}
 
 	private void truncateTable(String table) throws DatabaseException {

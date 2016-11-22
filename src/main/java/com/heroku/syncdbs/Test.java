@@ -11,12 +11,9 @@ public class Test {
 		int offset = 0;
 		while ( jobChunk > 0){
 			
-			int jc = jobChunk;
-			if ((jobChunk - chunk) > 0) 
-				jc = chunk;
 			jobChunk = jobChunk - chunk;
 			numberOfJobs++;
-			System.out.println("job number[" + numberOfJobs + "] - OFFSET: " + offset + " - LIMIT: " + jc);
+			System.out.println("job number[" + numberOfJobs + "] - OFFSET: " + offset + " - LIMIT: " + chunk);
 			offset = offset + chunk;
 		}
 		

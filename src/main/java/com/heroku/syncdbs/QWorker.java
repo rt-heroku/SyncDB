@@ -47,8 +47,14 @@ public class QWorker {
 				String msg = new String(delivery.getBody(), "UTF-8");
 				JSONObject jobj = (JSONObject) parser.parse(msg);
 
-				System.out.println("QWorker ---- Message Received: " + jobj.toJSONString());
-				main.copyTable(jobj.get("table").toString());
+				String table =  (String) jobj.get("table");
+				Integer offset = (Integer) jobj.get("offset");
+				Integer limit = (Integer) jobj.get("limit");
+				Integer job = (Integer) jobj.get("job");
+
+				System.out.println("QWorker Job ID[" + job + "] ---- Message Received: " + jobj.toJSONString());
+				main.copyTableChunk(table, offset, limit, job);
+				
 				channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 			}
 		}
