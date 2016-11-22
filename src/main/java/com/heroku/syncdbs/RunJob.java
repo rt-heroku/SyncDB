@@ -36,7 +36,7 @@ public class RunJob {
 				int chunk = 100000;
 				int job = 0;
 				int jobChunk = count;
-				int offset = chunk;
+				int offset = 0;
 
 				main.recreateTable(table);
 

@@ -8,7 +8,7 @@ public class Test {
 		int chunk = 100000;
 		int numberOfJobs = 0;
 		int jobChunk = count;
-		int offset = chunk;
+		int offset = 0;
 		while ( jobChunk > 0){
 			
 			int jc = jobChunk;

@@ -151,16 +151,18 @@ public abstract class Database {
 		synchronized ( connection ) {
 			try {
 				StringBuffer sql = new StringBuffer();
-	
+				//Only 1 row to get the definition
 				sql.append("SELECT * FROM ");
 				sql.append(table.toLowerCase());
-				
+				sql.append(" LIMIT 1");
+
 				if (isDebugEnabled())
 					System.out.println(sql.toString());
 
 				stmt = connection.createStatement();
 				//rs = stmt.executeQuery("SELECT * FROM TABLE_A");
 
+				stmt.setFetchSize(1);
 				rs = stmt.executeQuery(sql.toString());
 				md = rs.getMetaData();
 	
