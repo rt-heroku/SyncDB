@@ -97,18 +97,19 @@ public class DataMover {
 		try {
 			sql = target.generateDrop(table);
 			target.execute(sql);
-			System.out.println("TABLE DROPPED: " + table);
-			if (isDebugEnabled())
+			if (isDebugEnabled()){
+				System.out.println("TABLE DROPPED: " + table);
 				System.out.println("DEBUG - " + sql);
+			}
 
 		} catch (Exception e) {
 			System.out.println("Error while deleting table - " + e.getMessage());
 		}
-
-		System.out.println("CREATING TABLE " + table);
 		sql = source.generateCreate(table);
-		if (isDebugEnabled())
+		if (isDebugEnabled()){
+			System.out.println("CREATING TABLE " + table);
 			System.out.println("DEBUG - execute in target: " + sql);
+		}
 		target.execute(sql);
 	}
 

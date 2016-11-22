@@ -302,7 +302,8 @@ public abstract class Database {
 				
 				if (!str.startsWith("pg_")){
 					String type = rs.getString("TABLE_TYPE");
-					System.out.println("Found [" + type + "] - NAMED = " + str);
+					if (isDebugEnabled())
+						System.out.println("Found [" + type + "] - NAMED = " + str);
 					result.add(str);
 				}
 			}

@@ -121,7 +121,6 @@ public class Main {
 		try {
 			closeConnectionToSource();
 			closeConnectionToTarget();
-			connectToTarget();
 		} catch (SQLException e) {
 			throw e;
 		}
