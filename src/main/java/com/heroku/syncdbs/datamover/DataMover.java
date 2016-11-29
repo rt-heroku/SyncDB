@@ -118,7 +118,7 @@ public class DataMover {
 		int count = 0;
 		try {
 
-			sql = "SELECT COUNT(*) FROM " + table;
+			sql = "SELECT MAX(id) FROM " + table;
 			PreparedStatement statementSrc = db.prepareStatement(sql);
 			ResultSet rs = statementSrc.executeQuery();
 
@@ -244,10 +244,11 @@ public class DataMover {
 		}
 
 		if (offset > 0)
-			selectSQL.append(" OFFSET " + offset);
+			selectSQL.append(" id >= " + offset + " AND id < " + (offset + limit));
+//			selectSQL.append(" OFFSET " + offset);
 		
-		if (limit > 0)
-			selectSQL.append(" LIMIT " + limit);
+//		if (limit > 0)
+//			selectSQL.append(" LIMIT " + limit);
 
 		copyFromSelectIntoInsert(selectSQL.toString(), insertSQL.toString(), table);
 	}
