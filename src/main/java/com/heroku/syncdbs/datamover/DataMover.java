@@ -240,6 +240,7 @@ public class DataMover {
 
 		if (isDebugEnabled()) {
 			System.out.println("DEBUG SQL: " + insertSQL);
+			System.out.println("DEBUG SQL: " + selectSQL);
 		}
 
 		if (offset > 0)
@@ -249,7 +250,6 @@ public class DataMover {
 //		if (limit > 0)
 //			selectSQL.append(" LIMIT " + limit);
 
-		System.out.println("DEBUG SQL: " + selectSQL);
 
 		copyFromSelectIntoInsert(selectSQL.toString(), insertSQL.toString(), table);
 	}
@@ -267,7 +267,8 @@ public class DataMover {
 			rs = statementSrc.executeQuery();
 
 			int rows = 0;
-			System.out.println("Copying data ... ");
+			if (isDebugEnabled()) 
+				System.out.println("Copying data TABLE [" + table + "] ... ");
 
 			while (rs.next()) {
 				hasCommited = false;
