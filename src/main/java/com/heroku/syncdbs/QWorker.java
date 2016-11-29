@@ -1,5 +1,7 @@
 package com.heroku.syncdbs;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,6 +49,8 @@ public class QWorker {
 			while (true) {
 				QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 				if (delivery != null) {
+					long t1 = System.currentTimeMillis();
+
 					String msg = new String(delivery.getBody(), "UTF-8");
 					JSONObject jobj = (JSONObject) parser.parse(msg);
 
@@ -55,16 +59,24 @@ public class QWorker {
 					Integer limit = new Integer(jobj.get("limit").toString());
 					Integer job = new Integer(jobj.get("job").toString());
 
-					System.out.println("QWorker Job ID[" + job + "] ---- Message Received: " + jobj.toJSONString());
+					System.out.println("QWorker Starting [" + getCurrentTime() + "] Job ID[" + job + "] ---- Message Received: " + jobj.toJSONString());
 
 					main.copyTableChunk(table, offset, limit, job);
 
 					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+
+					long t2 = System.currentTimeMillis();
+					System.out.println("QWorker ENDED     ["+ getCurrentTime() + "] Job ID [" + job + "] in [" + (t2 - t1) / 1000 + "] seconds for table [" + table + "] !");
 				}
 			}
 		} catch (Exception e) {
 			main.closeBothConnections();
 			throw e;
 		}
+	}
+	protected static String getCurrentTime() {
+		Calendar cal = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		return sdf.format(cal.getTime());
 	}
 }

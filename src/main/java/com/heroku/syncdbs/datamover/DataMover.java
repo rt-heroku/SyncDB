@@ -263,7 +263,7 @@ public class DataMover {
 		try {
 			target.getConnection().setAutoCommit(false);
 			statementSrc = source.prepareForwardStatement(selectSQL.toString());
-			statementSrc.setFetchSize(10000);
+			statementSrc.setFetchSize(5000);
 			rs = statementSrc.executeQuery();
 
 			int rows = 0;
@@ -287,9 +287,9 @@ public class DataMover {
 			}
 			if (!hasCommited)
 				target.getConnection().commit();
-			rs.close();
-			statementSrc.close();
-			System.out.println("TABLE [" + table + "] TOTAL Rows Inserted: " + rows);
+//			rs.close();
+//			statementSrc.close();
+//			System.out.println("TABLE [" + table + "] TOTAL Rows Inserted: " + rows);
 		} catch (SQLException e) {
 			System.err.println("column type = " + getSqlTypeName(type));
 			try {
@@ -374,9 +374,9 @@ public class DataMover {
 	}
 
 	public void copyChunkTable(String table, int offset, int limit) throws DatabaseException{
-		long t1 = System.currentTimeMillis();
+//		long t1 = System.currentTimeMillis();
 		copyTable(table, offset, limit);
-		System.out.println("Table " + table + " chunk size[" + limit + "] copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
+//		System.out.println("Table " + table + " chunk size[" + limit + "] copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 	}
 	public void exportDatabase(String table) throws DatabaseException {
 		createTable(table);
