@@ -243,7 +243,7 @@ public class DataMover {
 			System.out.println("DEBUG SQL: " + selectSQL);
 		}
 
-		if ((offset > 0) && (limit > 0))
+//		if ((offset > 0) && (limit > 0))
 			selectSQL.append(" WHERE id >= " + offset + " AND id < " + (offset + limit));
 //			selectSQL.append(" OFFSET " + offset);
 		
