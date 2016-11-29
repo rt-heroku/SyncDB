@@ -243,7 +243,7 @@ public class DataMover {
 			System.out.println("DEBUG SQL: " + selectSQL);
 		}
 
-		if (offset > 0)
+		if ((offset > 0) && (limit > 0))
 			selectSQL.append(" WHERE id >= " + offset + " AND id < " + (offset + limit));
 //			selectSQL.append(" OFFSET " + offset);
 		
@@ -287,9 +287,8 @@ public class DataMover {
 			}
 			if (!hasCommited)
 				target.getConnection().commit();
-//			rs.close();
-//			statementSrc.close();
-//			System.out.println("TABLE [" + table + "] TOTAL Rows Inserted: " + rows);
+			if (rows > 0)
+				System.out.println("TABLE [" + table + "] Rows -- " + rows);
 		} catch (SQLException e) {
 			System.err.println("column type = " + getSqlTypeName(type));
 			try {
