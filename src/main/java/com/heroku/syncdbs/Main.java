@@ -98,9 +98,9 @@ public class Main {
 			throw e;
 		}
 	}
-	protected void recreateTable(String table) throws Exception {
+	protected void recreateTable(String table, int maxId) throws Exception {
 		try {
-			getMover().createTable(table);
+			getMover().createTable(table, maxId);
 		} catch (DatabaseException e) {
 			throw new Exception(e);
 		}
@@ -121,7 +121,6 @@ public class Main {
 	public void connectBothDBs() throws Exception{
 		try {
 			connectUsingHerokuVars(getSource(), getTarget());
-			//connectUsingJdbcUrls(getSource(), getTarget());
 
 			getMover().setSource(getSource());
 			getMover().setTarget(getTarget());
@@ -130,6 +129,16 @@ public class Main {
 		}
 	}
 
+	public void connectBothDBsUsingJDBC() throws Exception{
+		try {
+			connectUsingJdbcUrls(getSource(), getTarget());
+
+			getMover().setSource(getSource());
+			getMover().setTarget(getTarget());
+		} catch (SQLException e) {
+			throw e;
+		}
+	}
 	public void closeBothConnections() throws Exception{
 		try {
 			closeConnectionToSource();

@@ -13,12 +13,12 @@ public class TestQWorker {
 	public void run() throws Exception {
 
 		Main main = new Main();
-		main.connectBothDBs();
+		main.connectBothDBsUsingJDBC();
 
 		try {
 
-					String table = "filtered_accounts_t";
-					Integer offset = 7820000;
+					String table = "filtered_accounts_raj";
+					Integer offset = 0;
 					Integer limit = 20000;
 					Integer job = 1;
 

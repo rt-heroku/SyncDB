@@ -142,7 +142,7 @@ public abstract class Database {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public String generateCreate(String table) throws DatabaseException {
+	public String generateCreate(String table, int maxId) throws DatabaseException {
 		StringBuffer result = new StringBuffer();
 
 		ResultSetMetaData md = null;
@@ -151,17 +151,20 @@ public abstract class Database {
 		synchronized ( connection ) {
 			try {
 				StringBuffer sql = new StringBuffer();
+				
 				//Only 1 row to get the definition
 				sql.append("SELECT * FROM ");
 				sql.append(table.toLowerCase());
-				sql.append(" LIMIT 1");
-
+				
+				if (maxId > 0)
+					sql.append(" WHERE id = " + maxId);
+				else
+					sql.append(" LIMIT 1");
+				
 				if (isDebugEnabled())
 					System.out.println(sql.toString());
 
 				stmt = connection.createStatement();
-				//rs = stmt.executeQuery("SELECT * FROM TABLE_A");
-
 				stmt.setFetchSize(1);
 				rs = stmt.executeQuery(sql.toString());
 				md = rs.getMetaData();
@@ -179,27 +182,6 @@ public abstract class Database {
 					String type = processType(md.getColumnTypeName(i), md
 							.getPrecision(i));
 					result.append(type);
-	
-					// if (md.getPrecision(i) < 65535)
-					// {
-					// result.append('(');
-					// result.append(md.getPrecision(i));
-					// if (md.getScale(i) > 0)
-					// {
-					// result.append(',');
-					// result.append(md.getScale(i));
-					// }
-					// result.append(") ");
-					// } else {
-					// result.append(' ');
-					// }
-	
-					// if (this.isNumeric(md.getColumnType(i))) {
-					// if (!md.isSigned(i)) {
-					// result.append("UNSIGNED ");
-					// }
-					// }
-	
 					if (md.isNullable(i) == ResultSetMetaData.columnNoNulls) {
 						result.append("NOT NULL ");
 					} else {
@@ -302,7 +284,7 @@ public abstract class Database {
 				
 				if (!str.startsWith("pg_")){
 					String type = rs.getString("TABLE_TYPE");
-					if (isDebugEnabled())
+					//if (isDebugEnabled())
 						System.out.println("Found [" + type + "] - NAMED = " + str);
 					result.add(str);
 				}

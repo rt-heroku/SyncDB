@@ -85,7 +85,7 @@ public class ScheduleJob {
 					int jobChunk = count;
 					int offset = 0;
 
-					main.recreateTable(table);
+					main.recreateTable(table, count);
 
 					while (jobChunk > 0) {
 

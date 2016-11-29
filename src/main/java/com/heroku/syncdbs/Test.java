@@ -10,7 +10,8 @@ public class Test {
 	public static void main(String[] args) {
 	try{	
 		Main main = new Main();
-		main.connectBothDBs();
+		main.connectBothDBsUsingJDBC();
+
 		Map<String, Integer> tables = main.getTablesAndCount();
 		int chunk = getChunkSize(100000);
 
@@ -22,7 +23,7 @@ public class Test {
 			int jobChunk = count;
 			int offset = 0;
 
-			main.recreateTable(table);
+			main.recreateTable(table, count);
 
 			while (jobChunk > 0) {
 

@@ -91,7 +91,7 @@ public class DataMover {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public synchronized void createTable(String table) throws DatabaseException {
+	public synchronized void createTable(String table, int maxId) throws DatabaseException {
 		String sql;
 
 		try {
@@ -105,7 +105,7 @@ public class DataMover {
 		} catch (Exception e) {
 			System.out.println("Error while deleting table - " + e.getMessage());
 		}
-		sql = source.generateCreate(table);
+		sql = source.generateCreate(table, maxId);
 		if (isDebugEnabled()){
 			System.out.println("CREATING TABLE " + table);
 			System.out.println("DEBUG - execute in target: " + sql);
@@ -124,6 +124,7 @@ public class DataMover {
 
 			if (rs.next())
 				count = rs.getInt(1);
+			
 			rs.close();
 			statementSrc.close();
 
@@ -163,7 +164,7 @@ public class DataMover {
 		for (String table : list) {
 			try {
 				if (!table.startsWith("pg_")) {
-					createTable(table);
+					createTable(table, 0);
 					tables.add(table);
 				}
 			} catch (DatabaseException e) {
@@ -378,7 +379,7 @@ public class DataMover {
 //		System.out.println("Table " + table + " chunk size[" + limit + "] copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 	}
 	public void exportDatabase(String table) throws DatabaseException {
-		createTable(table);
+		createTable(table, 0);
 		long t1 = System.currentTimeMillis();
 		copyTable(table, 0, 0);
 		System.out.println("Table " + table + " copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
