@@ -116,7 +116,7 @@ public class Main {
 
 	protected void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
 		source.connectString(
-				"jdbc:postgresql://ec2-52-73-169-99.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+				"jdbc:postgresql://ec2-54-227-234-59.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 		target.connectString(
 				"jdbc:postgresql://ec2-34-192-225-110.compute-1.amazonaws.com:5432/ddtj1lkfhi8u5p?user=u2cniv4vh0r7f8&password=pbqi7smqlclupn7k8agcccmo17h&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 	}
@@ -129,6 +129,8 @@ public class Main {
 	public void connectBothDBs() throws Exception{
 		try {
 			connectUsingHerokuVars(getSource(), getTarget());
+			//connectUsingJdbcUrls(getSource(), getTarget());
+
 			getMover().setSource(getSource());
 			getMover().setTarget(getTarget());
 		} catch (SQLException e) {

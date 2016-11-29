@@ -240,15 +240,16 @@ public class DataMover {
 
 		if (isDebugEnabled()) {
 			System.out.println("DEBUG SQL: " + insertSQL);
-			System.out.println("DEBUG SQL: " + selectSQL);
 		}
 
 		if (offset > 0)
-			selectSQL.append(" id >= " + offset + " AND id < " + (offset + limit));
+			selectSQL.append(" WHERE id >= " + offset + " AND id < " + (offset + limit));
 //			selectSQL.append(" OFFSET " + offset);
 		
 //		if (limit > 0)
 //			selectSQL.append(" LIMIT " + limit);
+
+		System.out.println("DEBUG SQL: " + selectSQL);
 
 		copyFromSelectIntoInsert(selectSQL.toString(), insertSQL.toString(), table);
 	}
