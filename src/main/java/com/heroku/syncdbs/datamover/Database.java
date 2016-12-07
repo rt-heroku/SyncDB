@@ -278,7 +278,7 @@ public abstract class Database {
 			dbm = connection.getMetaData();
 
 			String types[] = { "VIEW" };
-			rs = dbm.getTables(null, "public", null, types);
+			rs = dbm.getTables(null, System.getenv("TRANSFER_SCHEMA"), null, types);
 			while (rs.next()) {
 				String str = rs.getString("TABLE_NAME");
 				
@@ -322,7 +322,7 @@ public abstract class Database {
 			dbm = connection.getMetaData();
 			
 			String types[] = { "TABLE" };
-			rs = dbm.getTables(null, "public", table.toLowerCase(), types);
+			rs = dbm.getTables(null, System.getenv("TRANSFER_SCHEMA"), table.toLowerCase(), types);
 			result = rs.next();
 			rs.close();
 		} catch (SQLException e) {
@@ -355,7 +355,7 @@ public abstract class Database {
 		try {
 			DatabaseMetaData dbm;
 			dbm = connection.getMetaData();
-			rs = dbm.getColumns(null, "public", table.toLowerCase(), null);
+			rs = dbm.getColumns(null, System.getenv("TRANSFER_SCHEMA"), table.toLowerCase(), null);
 			while (rs.next()) {
 				result.add(rs.getString("COLUMN_NAME").toLowerCase());
 			}
