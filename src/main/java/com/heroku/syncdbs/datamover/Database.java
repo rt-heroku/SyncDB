@@ -322,7 +322,7 @@ public abstract class Database {
 			dbm = connection.getMetaData();
 			
 			String types[] = { "TABLE" };
-			rs = dbm.getTables(null, System.getenv("TRANSFER_SCHEMA"), table.toLowerCase(), types);
+			rs = dbm.getTables(null, "public", table.toLowerCase(), types);
 			result = rs.next();
 			rs.close();
 		} catch (SQLException e) {
