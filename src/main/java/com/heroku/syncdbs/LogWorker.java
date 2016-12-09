@@ -13,16 +13,16 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
-public class QWorker {
+public class LogWorker {
 
 	private JSONParser parser = null;
 
-	public QWorker() {
+	public LogWorker() {
 		parser = new JSONParser();
 	}
 
 	public static void main(String[] args) throws Exception {
-		QWorker q = new QWorker();
+		LogWorker q = new LogWorker();
 		q.run();
 	}
 
@@ -34,7 +34,7 @@ public class QWorker {
 		Connection connection = factory.newConnection();
 		Channel channel = connection.createChannel();
 
-		String queueName = "" + System.getenv("QUEUE_NAME");
+		String queueName = "" + System.getenv("LOG_QUEUE_NAME");
 		params.put("x-ha-policy", "all");
 		channel.queueDeclare(queueName, true, false, false, params);
 		channel.basicQos(1);
@@ -43,31 +43,17 @@ public class QWorker {
 		channel.basicConsume(queueName, false, consumer);
 
 		Main main = new Main();
-		main.connectBothDBs();
-		String fromSchema = main.getFromSchema();
-		String toSchema = main.getToSchema();
+		main.connectToSource();
 		try {
 			while (true) {
 				QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 				if (delivery != null) {
-					long t1 = System.currentTimeMillis();
-
 					String msg = new String(delivery.getBody(), "UTF-8");
 					JSONObject jobj = (JSONObject) parser.parse(msg);
 
-					String table = (String) jobj.get("table");
-					Integer offset = new Integer(jobj.get("offset").toString());
-					Integer limit = new Integer(jobj.get("limit").toString());
-					Integer job = new Integer(jobj.get("job").toString());
-
-					System.out.println("QWorker Starting [" + getCurrentTime() + "] Job ID[" + job + "] ---- Message Received: " + jobj.toJSONString());
-
-					main.copyTableChunk(fromSchema, toSchema, table, offset, limit, job);
-
+					System.out.println("DEBUG: Logging -- " + jobj.toJSONString());
+					
 					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-
-					long t2 = System.currentTimeMillis();
-					System.out.println("QWorker ENDED     ["+ getCurrentTime() + "] Job ID [" + job + "] in [" + (t2 - t1) / 1000 + "] seconds for table [" + table + "] !");
 				}
 			}
 		} catch (Exception e) {

@@ -28,7 +28,8 @@ public class RunJob {
 
 			Main main = new Main();
 			main.connectBothDBs();
-			Map<String, Integer> tables = main.getTablesAndCount();
+			
+			Map<String, Integer> tables = main.getTablesToMoveFromSourceAndGetTheMaxId();
 			int chunk = getChunkSize(100000);
 
 			for (String table : tables.keySet()) {
@@ -39,7 +40,7 @@ public class RunJob {
 				int jobChunk = count;
 				int offset = 0;
 
-				main.recreateTable(table, count);
+				main.dropAndRecreateTableInTargetIfExists(table, count);
 
 				while (jobChunk > 0) {
 
@@ -85,5 +86,6 @@ public class RunJob {
 
 		return r;
 	}
+	
 
 }

@@ -26,10 +26,13 @@ public class Main {
 
 	public static void main(String[] args) throws Exception {
 		Main main = new Main();
-		main.copyData();
+		String fromSchema = main.getFromSchema();
+		String toSchema = main.getToSchema();
+		
+		main.copyData(fromSchema, toSchema);
 	}
 
-	protected void copyData() throws Exception {
+	protected void copyData(String fromSchema, String toSchema) throws Exception {
 		try {
 			long t1 = System.currentTimeMillis();
 			System.out.println("Starting data mover ... " + getCurrentTime());
@@ -46,7 +49,7 @@ public class Main {
 				getMover().printGeneralMetadata(getTarget());
 			}
 
-			getMover().exportDatabase();
+			getMover().exportDatabase(fromSchema, toSchema);
 
 			getSource().close();
 			getTarget().close();
@@ -61,18 +64,18 @@ public class Main {
 		}
 	}
 
-	protected void copyTableChunk(String table, Integer offset, Integer limit, Integer job) throws Exception {
+	protected void copyTableChunk(String fromSchema, String toSchema, String table, Integer offset, Integer limit, Integer job) throws Exception {
 		try {
 			validateConnection("target");
 			validateConnection("source");
 			
-			getMover().copyChunkTable(table, offset, limit);
+			getMover().copyChunkTable(fromSchema, toSchema, table, offset, limit);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		}
 	}
-	protected void copyTable(String table) throws Exception {
+	protected void copyTable(String fromSchema, String toSchema, String table) throws Exception {
 		try {
 			long t1 = System.currentTimeMillis();
 			System.out.println("Starting data mover for table [" + table + "] ... " + getCurrentTime());
@@ -84,7 +87,7 @@ public class Main {
 				getMover().printGeneralMetadata(getTarget());
 			}
 
-			getMover().exportDatabase(table);
+			getMover().exportDatabase(fromSchema, toSchema, table);
 
 			getSource().close();
 			getTarget().close();
@@ -98,9 +101,11 @@ public class Main {
 			throw e;
 		}
 	}
-	protected void recreateTable(String table, int maxId) throws Exception {
+	protected void dropAndRecreateTableInTargetIfExists(String table, int maxId) throws Exception {
 		try {
-			getMover().createTable(table, maxId);
+			String fromSchema = getFromSchema();
+			String toSchema = getToSchema();
+			getMover().dropTableIfExistsAndCreateTable(fromSchema, toSchema, table, maxId);
 		} catch (DatabaseException e) {
 			throw new Exception(e);
 		}
@@ -164,13 +169,27 @@ public class Main {
 		getTarget().close();
 	}
 	
-	protected Map<String, Integer> getTablesAndCount() throws Exception {
+	public String getFromSchema(){
+		String schema = "public";
+		if (System.getenv("TRANSFER_FROM_SCHEMA") != null)
+			schema = System.getenv("TRANSFER_FROM_SCHEMA");
+		return schema;
+	}
+	
+	public String getToSchema(){
+		String schema = "public";
+		if (System.getenv("TRANSFER_TO_SCHEMA") != null)
+			schema = System.getenv("TRANSFER_TO_SCHEMA");
+		return schema;
+	}
+
+	protected Map<String, Integer> getTablesToMoveFromSourceAndGetTheMaxId() throws Exception {
 		try{
 			validateConnection("source");
 		}catch (SQLException e) {
 			throw e;
 		}
-		return mover.getTableNameAndRowCount(getSource());
+		return mover.getListOfTableNamesAndMaxId(getSource(), getFromSchema());
 	}
 	
 	private void validateConnection(String db) throws SQLException{

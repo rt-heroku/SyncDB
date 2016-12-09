@@ -125,9 +125,10 @@ public abstract class Database {
 	 *            The name of the table to drop.
 	 * @return The SQL to drop a table.
 	 */
-	public String generateDrop(String table) {
+	public String generateDropTableSQLStatement(String schema, String table) {
 		StringBuffer result = new StringBuffer();
 		result.append("DROP TABLE ");
+		result.append(schema + ".");
 		result.append(table);
 		//result.append(";\n");
 		return result.toString();
@@ -142,7 +143,7 @@ public abstract class Database {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public String generateCreate(String table, int maxId) throws DatabaseException {
+	public String generateCreateTableSQLStatement(String sFrom, String sTo, String table, int maxId) throws DatabaseException {
 		StringBuffer result = new StringBuffer();
 
 		ResultSetMetaData md = null;
@@ -154,7 +155,7 @@ public abstract class Database {
 				
 				//Only 1 row to get the definition
 				sql.append("SELECT * FROM ");
-				sql.append(table.toLowerCase());
+				sql.append(sFrom + "." + table.toLowerCase());
 				
 				if (maxId > 0)
 					sql.append(" WHERE id = " + maxId);
@@ -170,7 +171,7 @@ public abstract class Database {
 				md = rs.getMetaData();
 	
 				result.append("CREATE TABLE ");
-				result.append(table);
+				result.append(sTo + "." + table);
 				result.append(" ( ");
 	
 				for (int i = 1; i <= md.getColumnCount(); i++) {
@@ -269,7 +270,7 @@ public abstract class Database {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public Collection<String> listTables() throws DatabaseException {
+	public Collection<String> listTables(String schema) throws DatabaseException {
 		Collection<String> result = new ArrayList<String>();
 		ResultSet rs = null;
 
@@ -278,7 +279,7 @@ public abstract class Database {
 			dbm = connection.getMetaData();
 
 			String types[] = { "VIEW" };
-			rs = dbm.getTables(null, System.getenv("TRANSFER_SCHEMA"), null, types);
+			rs = dbm.getTables(null, schema, null, types);
 			while (rs.next()) {
 				String str = rs.getString("TABLE_NAME");
 				
@@ -313,7 +314,7 @@ public abstract class Database {
 	 * @throws DatabaseException
 	 *             A database error occured.
 	 */
-	public boolean tableExists(String table) throws DatabaseException {
+	public boolean tableExists(String table, String schema) throws DatabaseException {
 		boolean result = false;
 		ResultSet rs = null;
 
@@ -322,7 +323,7 @@ public abstract class Database {
 			dbm = connection.getMetaData();
 			
 			String types[] = { "TABLE" };
-			rs = dbm.getTables(null, "public", table.toLowerCase(), types);
+			rs = dbm.getTables(null, schema, table.toLowerCase(), types);
 			result = rs.next();
 			rs.close();
 		} catch (SQLException e) {
@@ -347,7 +348,7 @@ public abstract class Database {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public Collection<String> listColumns(String table)
+	public Collection<String> listColumns(String table, String schema)
 			throws DatabaseException {
 		Collection<String> result = new ArrayList<String>();
 		ResultSet rs = null;
@@ -355,7 +356,7 @@ public abstract class Database {
 		try {
 			DatabaseMetaData dbm;
 			dbm = connection.getMetaData();
-			rs = dbm.getColumns(null, System.getenv("TRANSFER_SCHEMA"), table.toLowerCase(), null);
+			rs = dbm.getColumns(null, schema, table.toLowerCase(), null);
 			while (rs.next()) {
 				result.add(rs.getString("COLUMN_NAME").toLowerCase());
 			}
@@ -411,4 +412,5 @@ public abstract class Database {
 	public Connection getConnection() {
 		return connection;
 	}
+	
 }

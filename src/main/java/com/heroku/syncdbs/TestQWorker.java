@@ -14,6 +14,8 @@ public class TestQWorker {
 
 		Main main = new Main();
 		main.connectBothDBsUsingJDBC();
+		String fromSchema = main.getFromSchema();
+		String toSchema = main.getToSchema();
 
 		try {
 
@@ -24,7 +26,7 @@ public class TestQWorker {
 
 					System.out.println("QWorker Job ID[" + job + "]");
 
-					main.copyTableChunk(table, offset, limit, job);
+					main.copyTableChunk(fromSchema, toSchema, table, offset, limit, job);
 
 		} catch (Exception e) {
 			main.closeBothConnections();
