@@ -412,5 +412,5 @@ public abstract class Database {
 	public Connection getConnection() {
 		return connection;
 	}
-	
+
 }

@@ -45,6 +45,10 @@ public class DataMover {
 	 */
 	private Database target;
 
+	private int rowsLoaded = 0;
+	private String jobid;
+	private int taskNum;
+	
 	/**
 	 * The list of tables, from the source database.
 	 */
@@ -296,14 +300,24 @@ public class DataMover {
 					target.getConnection().commit();
 					hasCommited = true;
 				}
-				if ((rows % 100000) == 0)
+				if ((rows % 5000) == 0){
+					logTask(table, rows);
+				}
+				if ((rows % 100000) == 0){
+					//maybe log every x amount of rows ... 10k? 1k?
 					System.out.println("TABLE [" + table + "] Rows -- " + rows);
+				}
 				statementTrg.close();
 			}
 			if (!hasCommited)
 				target.getConnection().commit();
-			if (rows > 0)
+			
+			setRowsLoaded(rows);
+			
+			if (rows > 0){
+				logTask(table, rows);
 				System.out.println("TABLE [" + table + "] Rows -- " + rows);
+			}
 		} catch (SQLException e) {
 			System.err.println("column type = " + getSqlTypeName(type));
 			try {
@@ -334,6 +348,34 @@ public class DataMover {
 		}
 	}
 
+	public boolean tasknumExistsInTable(String table, String column, int value) throws Exception{
+		ResultSet rs = null;
+		boolean ret = false;
+		String sql = "SELECT " + column + " FROM " + table + " WHERE jobid='" + getJobid() + "' AND table='" + table + "' and " + column + "=" + value;
+		rs = getSource().prepareStatement(sql).executeQuery();
+		ret = rs.next();
+		rs.close();
+		return ret;
+	}
+
+	private void logTask(String table, int rows){
+		new Thread(() -> {
+			try {
+				String sql = "";
+				if (tasknumExistsInTable(table, "tasknum", getTaskNum())){
+					sql = "UPDATE syncdb.task SET index_loaded = " + rows +
+							" WHERE jobid='" + getJobid() + "' AND table='" + table + "'";
+				}else{
+					sql = "INSERT INTO syncdb.task (jobid, table, tasknum, index_loaded) VALUES('" + getJobid() + "','" + table + "'," + getTaskNum() + "," + rows + ")";
+				}
+				getSource().execute(sql);
+			} catch (Exception e) {
+				System.err.println("Error while logging table [" + table + "] load for job id [" + getJobid() + "]" + e.getMessage());
+			}
+		
+		}).start();
+	}
+	
 	private int insertRow(PreparedStatement statementTrg, ResultSet rs, int type) throws SQLException {
 		for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
 
@@ -389,6 +431,7 @@ public class DataMover {
 
 	public void copyChunkTable(String fromSchema, String toSchema, String table, int offset, int limit) throws DatabaseException{
 //		long t1 = System.currentTimeMillis();
+		setRowsLoaded(0);
 		createSelectAndInsertStatementsAndCopyTableData(fromSchema, toSchema, table, offset, limit);
 //		System.out.println("Table " + table + " chunk size[" + limit + "] copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 	}
@@ -503,6 +546,30 @@ public class DataMover {
 		}
 
 		return "?";
+	}
+
+	public int getRowsLoaded() {
+		return rowsLoaded;
+	}
+
+	public void setRowsLoaded(int rowsLoaded) {
+		this.rowsLoaded = rowsLoaded;
+	}
+
+	public int getTaskNum() {
+		return taskNum;
+	}
+
+	public void setTaskNum(int taskNum) {
+		this.taskNum = taskNum;
+	}
+
+	public String getJobid() {
+		return jobid;
+	}
+
+	public void setJobid(String jobid) {
+		this.jobid = jobid;
 	}
 
 }

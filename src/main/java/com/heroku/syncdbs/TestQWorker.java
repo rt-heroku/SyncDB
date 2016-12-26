@@ -1,5 +1,7 @@
 package com.heroku.syncdbs;
 
+import java.util.UUID;
+
 public class TestQWorker {
 
 	public TestQWorker() {
@@ -23,10 +25,10 @@ public class TestQWorker {
 					Integer offset = 0;
 					Integer limit = 20000;
 					Integer job = 1;
+					String jobid = UUID.randomUUID().toString();
+					System.out.println("QWorker Job ID[" + jobid + "]");
 
-					System.out.println("QWorker Job ID[" + job + "]");
-
-					main.copyTableChunk(fromSchema, toSchema, table, offset, limit, job);
+					main.copyTableChunk(fromSchema, toSchema, table, offset, limit, job, jobid);
 
 		} catch (Exception e) {
 			main.closeBothConnections();

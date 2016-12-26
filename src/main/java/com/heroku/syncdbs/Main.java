@@ -64,12 +64,17 @@ public class Main {
 		}
 	}
 
-	protected void copyTableChunk(String fromSchema, String toSchema, String table, Integer offset, Integer limit, Integer job) throws Exception {
+	protected int copyTableChunk(String fromSchema, String toSchema, String table, Integer offset, Integer limit, Integer job, String jobid) throws Exception {
 		try {
 			validateConnection("target");
 			validateConnection("source");
 			
+			getMover().setJobid(jobid);
+			getMover().setTaskNum(job);
+			
 			getMover().copyChunkTable(fromSchema, toSchema, table, offset, limit);
+			return getMover().getRowsLoaded();
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
@@ -204,15 +209,25 @@ public class Main {
 	}
 
 	protected void connectToTarget(Database target) throws SQLException {
-		String target_var = System.getenv(TARGET_VAR);
+		String target_var = getTargetDatabase();
 		target.connect(target_var);
 		System.out.println("Connected to DATABASE: " + target_var);
 	}
 
+	public String getTargetDatabase() {
+		String target_var = System.getenv(TARGET_VAR);
+		return target_var;
+	}
+
 	protected void connectToSource(Database source) throws SQLException {
-		String source_var = System.getenv(SOURCE_VAR);
+		String source_var = getSourceDatabase();
 		source.connect(source_var);
 		System.out.println("Connected to DATABASE: " + source_var);
+	}
+
+	public String getSourceDatabase() {
+		String source_var = System.getenv(SOURCE_VAR);
+		return source_var;
 	}
 
 	protected static String getCurrentTime() {
