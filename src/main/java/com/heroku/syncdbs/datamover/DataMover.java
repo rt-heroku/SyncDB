@@ -164,6 +164,7 @@ public class DataMover {
 		for (String table : list) {
 			try {
 				if (!table.startsWith("pg_")) {
+					System.out.println("table to get max id = " + schema + "." + table);
 					int count = getTableMaxId(db, schema + "." + table);
 					m.put(table, count);
 				}
