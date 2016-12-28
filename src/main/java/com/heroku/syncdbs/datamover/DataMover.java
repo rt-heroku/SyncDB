@@ -382,7 +382,7 @@ public class DataMover {
 				statementTrg.setInt(i, rs.getInt(i));
 		}
 
-		if (isDebugEnabled())
+		//if (isDebugEnabled())
 			System.out.println(statementTrg.toString());
 		statementTrg.execute();
 		return type;
