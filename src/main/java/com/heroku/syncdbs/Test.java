@@ -1,56 +1,106 @@
 package com.heroku.syncdbs;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.json.simple.JSONObject;
 
+import com.heroku.syncdbs.datamover.Database;
+import com.heroku.syncdbs.enums.JobStatus;
+import com.heroku.syncdbs.enums.JobType;
+
 public class Test {
+
+	private static final String JOB_USER = "HEROKU CLI";
 
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
-	try{	
-		Main main = new Main();
-		main.connectBothDBsUsingJDBC();
+		try {
 
-		Map<String, Integer> tables = main.getTablesToMoveFromSourceAndGetTheMaxId();
-		int chunk = getChunkSize(100000);
+			String jobid = UUID.randomUUID().toString();
+			Main main = new Main();
+			main.connectBothDBsUsingJDBC();
 
-		for (String table : tables.keySet()) {
-			int count = tables.get(table).intValue();
-			JSONObject obj = new JSONObject();
+			Map<String, Integer> tables = main.getTablesToMoveFromSourceAndGetTheMaxId();
+			int chunk = getChunkSize(100000);
 
-			int job = 0;
-			int jobChunk = count;
-			int offset = 0;
+			Database sourceDb = main.getSource();
 
-			main.dropAndRecreateTableInTargetIfExists(table, count);
+			int indexOfTable = 0;
+			// log job
+			JobLoggerHelper.logJob(sourceDb, jobid, JobType.MANUAL_CLI, JOB_USER, JobStatus.CREATED, tables.size(), chunk,
+					main.getSourceDatabase(), main.getTargetDatabase());
 
-			while (jobChunk > 0) {
+			for (String table : tables.keySet()) {
+				int count = tables.get(table).intValue();
+				JSONObject obj = new JSONObject();
+				List<JSONObject> tasks = new ArrayList<JSONObject>();
 
-				jobChunk = jobChunk - chunk;
-				job++;
+				int job = 0;
+				int jobChunk = count;
+				int offset = 0;
 
-				obj.put("table", table);
-				obj.put("count", count);
-				obj.put("offset", offset);
-				obj.put("limit", chunk);
-				obj.put("job", job);
+				indexOfTable++;
+				
+				main.dropAndRecreateTableInTargetIfExists(table, count);
 
-				System.out.println("MANUALLY Publishing job number[" + job + "] for TABLE[" + table
-						+ "] with total " + count + " rows - OFFSET: " + offset + " - LIMIT: " + chunk);
+				while (jobChunk > 0) {
 
-				offset = offset + chunk;
+					jobChunk = jobChunk - chunk;
+					job++;
+
+					obj.put("table", table);
+					obj.put("count", count);
+					obj.put("offset", offset);
+					obj.put("limit", chunk);
+					obj.put("job", job);
+
+					System.out.println("MANUALLY Publishing job number[" + job + "] for TABLE[" + table
+							+ "] with total " + count + " rows - OFFSET: " + offset + " - LIMIT: " + chunk);
+
+					offset = offset + chunk;
+					
+					if  (jobChunk <= 0)
+						obj.replace("last", true);
+					else
+						obj.put("last", false);
+						
+					tasks.add(obj);
+				}
+
+				// Log Job details
+				JobLoggerHelper.logJobDetail(sourceDb, jobid, table, indexOfTable, job, count, JobStatus.CREATED, "");
+				JobLoggerHelper.logJobStatus(sourceDb, jobid, JobStatus.ANALYZED);
+				// Sending tasks
+				for (JSONObject o : tasks) {
+					// Adds number of total jobs
+					o.put("totaljobs", job);
+					// Queue task
+					// channel.basicPublish("", queueName,
+					// MessageProperties.PERSISTENT_TEXT_PLAIN,
+					// o.toJSONString().getBytes("UTF-8"));
+
+					JobLoggerHelper.logInitialTask(sourceDb, o.get("table").toString(), o.get("jobid").toString(), o.get("jobnum").toString());
+
+//					System.out.println("MANUALLY Publishing job number[" + o.get("jobnum") + "] of " + job
+//							+ " jobs for TABLE[" + o.get("table") + "] with total " + o.get("maxid")
+//							+ " rows - OFFSET: " + o.get("offset") + " - CHUNK: " + o.get("chunk"));
+					System.out.println(o.toJSONString());
+				}
+				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table, JobStatus.SENT, indexOfTable, tasks.toString());
 			}
-
+			JobLoggerHelper.logJobStatus(sourceDb, jobid, JobStatus.SENT);
+			main.closeBothConnections();
+		} catch (Exception e) {
+			System.err.println(e.getMessage());
+			e.printStackTrace();
 		}
 
-		main.closeBothConnections();
-	} catch (Exception e) {
-		System.err.println(e.getMessage());
-		e.printStackTrace();
 	}
-		
-	}
+
+
 	private static int getChunkSize(int i) {
 		int r = 0;
 		try {

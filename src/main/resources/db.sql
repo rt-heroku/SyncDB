@@ -1,10 +1,10 @@
-DROP SCHEMA syncdb;
+DROP SCHEMA syncdb CASCADE ;
 
 CREATE SCHEMA syncdb;
 
 CREATE TABLE syncdb.jobs
 (
-   id             INTEGER NOT NULL,
+   id             SERIAL,
    job_start      TIMESTAMP (5) WITHOUT TIME ZONE,
    job_end        timestamp,
    status         VARCHAR (20) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE syncdb.jobs
 
 CREATE TABLE syncdb.job_detail
 (
-   id           INTEGER NOT NULL,
+   id           SERIAL,
    job_id       INTEGER NOT NULL,
    event_date   timestamp NOT NULL,
    status       VARCHAR (20) NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE syncdb.job_detail
 
 CREATE TABLE syncdb.task
 (
-   id             INTEGER NOT NULL,
+   id             SERIAL,
    jobid          INTEGER NOT NULL,
    "table"        VARCHAR (50) NOT NULL,
    tasknum        INTEGER NOT NULL,

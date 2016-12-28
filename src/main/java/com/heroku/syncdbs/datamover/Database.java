@@ -177,7 +177,7 @@ public abstract class Database {
 				for (int i = 1; i <= md.getColumnCount(); i++) {
 					if (i != 1)
 						result.append(',');
-					result.append(md.getColumnName(i).toLowerCase());
+					result.append("\"" + md.getColumnName(i).toLowerCase() + "\"");
 					result.append(' ');
 	
 					String type = processType(md.getColumnTypeName(i), md

@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.heroku.syncdbs.JobLoggerHelper;
+
 /**
  * Generic data mover class. This class is designed to move data from one
  * database to another. To do this, first the tables are created in the target
@@ -301,7 +303,7 @@ public class DataMover {
 					hasCommited = true;
 				}
 				if ((rows % 5000) == 0){
-					logTask(table, rows);
+					JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table, rows);
 				}
 				if ((rows % 100000) == 0){
 					//maybe log every x amount of rows ... 10k? 1k?
@@ -315,7 +317,7 @@ public class DataMover {
 			setRowsLoaded(rows);
 			
 			if (rows > 0){
-				logTask(table, rows);
+				JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table, rows);
 				System.out.println("TABLE [" + table + "] Rows -- " + rows);
 			}
 		} catch (SQLException e) {
@@ -348,34 +350,6 @@ public class DataMover {
 		}
 	}
 
-	public boolean tasknumExistsInTable(String table, String column, int value) throws Exception{
-		ResultSet rs = null;
-		boolean ret = false;
-		String sql = "SELECT " + column + " FROM " + table + " WHERE jobid='" + getJobid() + "' AND table='" + table + "' and " + column + "=" + value;
-		rs = getSource().prepareStatement(sql).executeQuery();
-		ret = rs.next();
-		rs.close();
-		return ret;
-	}
-
-	private void logTask(String table, int rows){
-		new Thread(() -> {
-			try {
-				String sql = "";
-				if (tasknumExistsInTable(table, "tasknum", getTaskNum())){
-					sql = "UPDATE syncdb.task SET index_loaded = " + rows +
-							" WHERE jobid='" + getJobid() + "' AND table='" + table + "'";
-				}else{
-					sql = "INSERT INTO syncdb.task (jobid, table, tasknum, index_loaded) VALUES('" + getJobid() + "','" + table + "'," + getTaskNum() + "," + rows + ")";
-				}
-				getSource().execute(sql);
-			} catch (Exception e) {
-				System.err.println("Error while logging table [" + table + "] load for job id [" + getJobid() + "]" + e.getMessage());
-			}
-		
-		}).start();
-	}
-	
 	private int insertRow(PreparedStatement statementTrg, ResultSet rs, int type) throws SQLException {
 		for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
 
