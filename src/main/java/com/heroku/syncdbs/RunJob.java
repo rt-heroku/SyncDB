@@ -50,7 +50,6 @@ public class RunJob {
 			
 			for (String table : tables.keySet()) {
 				int maxid = tables.get(table).intValue();
-				JSONObject obj = new JSONObject();
 				List<JSONObject> tasks = new ArrayList<JSONObject>();
 				int jobnum = 0;
 				int jobChunk = maxid;
@@ -62,6 +61,7 @@ public class RunJob {
 				
 				//Analyzing jobs
 				while (jobChunk > 0) {
+					JSONObject obj = new JSONObject();
 
 					jobChunk = jobChunk - chunk;
 					jobnum++;
@@ -83,8 +83,6 @@ public class RunJob {
 					tasks.add(obj);
 				}
 
-				obj.replace("last", true);
-				
 				//Log Job details
 				JobLoggerHelper.logJobDetail(sourceDb, jobid, table, indexOfTable, jobnum, maxid, JobStatus.CREATED, "");
 				//Sending tasks
