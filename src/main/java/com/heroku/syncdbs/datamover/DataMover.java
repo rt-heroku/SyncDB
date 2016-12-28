@@ -376,6 +376,8 @@ public class DataMover {
 				statementTrg.setFloat(i, rs.getFloat(i));
 			else if (type == Types.BIT || type == Types.BOOLEAN)
 				statementTrg.setBoolean(i, rs.getBoolean(i));
+			else if (type == Types.NULL)
+				statementTrg.setNull(i, 0);
 			else
 				statementTrg.setInt(i, rs.getInt(i));
 		}

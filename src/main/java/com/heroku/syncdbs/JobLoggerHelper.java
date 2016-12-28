@@ -10,17 +10,17 @@ import com.heroku.syncdbs.enums.JobStatus;
 import com.heroku.syncdbs.enums.JobType;
 
 public class JobLoggerHelper {
-	
+
 	private static java.sql.Date getNow() {
 		Date d = new Date();
 		return new java.sql.Date(d.getTime());
 	}
 
-	private static Timestamp getTimestampNow(){
+	private static Timestamp getTimestampNow() {
 		Date d = new Date();
 		return new Timestamp(d.getTime());
 	}
-	
+
 	public static void logJobStatus(Database db, String jobid, JobStatus jobStatus) {
 		try {
 
@@ -33,7 +33,7 @@ public class JobLoggerHelper {
 
 			st.execute();
 			st.close();
-			System.out.println("Job [" + jobid  + "] - " + jobStatus.name());
+			System.out.println("Job [" + jobid + "] - " + jobStatus.name());
 
 		} catch (Exception e) {
 			System.err.println("Error logging Job - " + e.getMessage());
@@ -42,7 +42,8 @@ public class JobLoggerHelper {
 
 	}
 
-	public static void logJobDetailStatus(Database db, String jobid, String table, JobStatus jobStatus, int indexOfTable, String comment) {
+	public static void logJobDetailStatus(Database db, String jobid, String table, JobStatus jobStatus,
+			int indexOfTable, String comment) {
 		try {
 
 			String sql = "UPDATE syncdb.job_detail SET status = ?, status_date = ?, comment = ? WHERE jobid = ? and \"table\" =  ? and job_num = ?";
@@ -54,10 +55,10 @@ public class JobLoggerHelper {
 			st.setString(4, jobid);
 			st.setString(5, table);
 			st.setInt(6, indexOfTable);
-			
+
 			st.execute();
 			st.close();
-			System.out.println("Job [" + jobid  + "] - " + jobStatus.name());
+			System.out.println("Job [" + jobid + "] - " + jobStatus.name());
 
 		} catch (Exception e) {
 			System.err.println("Error logging Job - " + e.getMessage());
@@ -66,14 +67,15 @@ public class JobLoggerHelper {
 
 	}
 
-	public static void logJobDetail(Database db, String jobid, String table, int indexOfTable, int numOfJobs, int maxid, JobStatus status, String comment) {
+	public static void logJobDetail(Database db, String jobid, String table, int indexOfTable, int numOfJobs, int maxid,
+			JobStatus status, String comment) {
 		try {
 
 			String sql = "INSERT INTO syncdb.job_detail (jobid, status_date, status, comment, \"table\", num_of_tasks, job_num, maxid) VALUES (?,?,?,?,?,?,?,?);";
 			PreparedStatement st = db.prepareStatement(sql);
 
 			Timestamp t = getTimestampNow();
-			
+
 			st.setString(1, jobid);
 			st.setTimestamp(2, t);
 			st.setString(3, status.name());
@@ -82,10 +84,10 @@ public class JobLoggerHelper {
 			st.setInt(6, numOfJobs);
 			st.setInt(7, indexOfTable);
 			st.setInt(8, maxid);
-						
+
 			st.execute();
 			st.close();
-			
+
 		} catch (Exception e) {
 			System.err.println("Error logging Job - " + e.getMessage());
 			e.printStackTrace();
@@ -113,7 +115,7 @@ public class JobLoggerHelper {
 			PreparedStatement st = database.prepareStatement(sql);
 
 			Timestamp t = getTimestampNow();
-			
+
 			st.setTimestamp(1, t);
 			st.setString(2, jobStatus.name());
 			st.setInt(3, numOfTasks);
@@ -125,43 +127,44 @@ public class JobLoggerHelper {
 			st.setString(9, jobUser);
 			st.setString(10, jobid);
 			st.setTimestamp(11, t);
-			
+
 			st.execute();
 			st.close();
-			
+
 		} catch (Exception e) {
 			System.err.println("Error logging Job - " + e.getMessage());
 			e.printStackTrace();
 		}
 
 	}
-	public static boolean tasknumExistsInTable(Database db, String jobid, String table, String column, int value) throws Exception{
+
+	public static boolean tasknumExistsInTable(Database db, String jobid, String table, String column, int value)
+			throws Exception {
 		ResultSet rs = null;
 		boolean ret = false;
-		String sql = "SELECT " + column + " FROM " + table + " WHERE jobid='" + jobid + "' AND \"table\"='" + table + "' and " + column + "=" + value;
+		String sql = "SELECT " + column + " FROM " + table + " WHERE jobid='" + jobid + "' AND \"table\"='" + table
+				+ "' and " + column + "=" + value;
 		rs = db.prepareStatement(sql).executeQuery();
 		ret = rs.next();
 		rs.close();
 		return ret;
 	}
 
-	public static void logTask(Database db, String jobId, int taskNum, String table, int rows){
-//		new Thread(() -> {
-			try {
-				String sql = "";
-				if (tasknumExistsInTable(db, jobId, "syncdb.task", "tasknum", taskNum)){
-					sql = "UPDATE syncdb.task SET index_loaded = " + rows +
-							" WHERE jobid='" + jobId + "' AND \"table\"='" + table + "'";
-				}else{
-					sql = "INSERT INTO syncdb.task (jobid, \"table\", tasknum, index_loaded) VALUES('" + jobId + "','" + table + "'," +taskNum + "," + rows + ")";
-				}
-				db.execute(sql);
-			} catch (Exception e) {
-				System.err.println("Error while logging table [" + table + "] load for job id [" + jobId + "]" + e.getMessage());
+	public static void logTask(Database db, String jobId, int taskNum, String table, int rows) {
+		try {
+			String sql = "";
+			if (tasknumExistsInTable(db, jobId, "syncdb.task", "tasknum", taskNum)) {
+				sql = "UPDATE syncdb.task SET index_loaded = " + rows + " WHERE jobid='" + jobId + "' AND \"table\"='"
+						+ table + "'";
+			} else {
+				sql = "INSERT INTO syncdb.task (jobid, \"table\", tasknum, index_loaded) VALUES('" + jobId + "','"
+						+ table + "'," + taskNum + "," + rows + ")";
 			}
-		
-//		}).start();
+			db.execute(sql);
+		} catch (Exception e) {
+			System.err.println(
+					"Error while logging table [" + table + "] load for job id [" + jobId + "]" + e.getMessage());
+		}
 	}
-	
 
 }
