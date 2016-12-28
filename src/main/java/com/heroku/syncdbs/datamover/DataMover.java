@@ -287,7 +287,7 @@ public class DataMover {
 			statementSrc = source.prepareForwardStatement(selectSQL.toString());
 			statementSrc.setFetchSize(5000);
 			rs = statementSrc.executeQuery();
-
+			System.out.println(insertSQL.toString());
 			int rows = 0;
 			if (isDebugEnabled()) 
 				System.out.println("Copying data TABLE [" + table + "] ... ");
