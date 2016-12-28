@@ -142,7 +142,7 @@ public class JobLoggerHelper {
 			throws Exception {
 		ResultSet rs = null;
 		boolean ret = false;
-		String sql = "SELECT " + column + " FROM " + table + " WHERE jobid='" + jobid + "' AND \"table\"='" + table
+		String sql = "SELECT " + column + " FROM syncdb.task WHERE jobid='" + jobid + "' AND \"table\"='" + table
 				+ "' and " + column + "=" + value;
 		rs = db.prepareStatement(sql).executeQuery();
 		ret = rs.next();
@@ -153,7 +153,7 @@ public class JobLoggerHelper {
 	public static void logTask(Database db, String jobId, int taskNum, String table, int rows) {
 		try {
 			String sql = "";
-			if (tasknumExistsInTable(db, jobId, "syncdb.task", "tasknum", taskNum)) {
+			if (tasknumExistsInTable(db, jobId, table, "tasknum", taskNum)) {
 				sql = "UPDATE syncdb.task SET index_loaded = " + rows + " WHERE jobid='" + jobId + "' AND \"table\"='"
 						+ table + "'";
 			} else {
