@@ -146,7 +146,7 @@ public class JobLoggerHelper {
 	}
 
 	public static void logTask(Database db, String jobId, int taskNum, String table, int rows){
-		new Thread(() -> {
+//		new Thread(() -> {
 			try {
 				String sql = "";
 				if (tasknumExistsInTable(db, jobId, "syncdb.task", "tasknum", taskNum)){
@@ -160,7 +160,7 @@ public class JobLoggerHelper {
 				System.err.println("Error while logging table [" + table + "] load for job id [" + jobId + "]" + e.getMessage());
 			}
 		
-		}).start();
+//		}).start();
 	}
 	
 
