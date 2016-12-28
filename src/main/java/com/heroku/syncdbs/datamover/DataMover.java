@@ -237,7 +237,7 @@ public class DataMover {
 		StringBuffer selectSQL = new StringBuffer();
 		StringBuffer insertSQL = new StringBuffer();
 		StringBuffer values = new StringBuffer();
-		Collection<String> columns = source.listColumns(fromSchema, table);
+		Collection<String> columns = source.listColumns(table, fromSchema);
 		selectSQL.append("SELECT ");
 		insertSQL.append("INSERT INTO ");
 		insertSQL.append(toSchema + ".");
@@ -253,8 +253,8 @@ public class DataMover {
 			} else
 				first = false;
 
-			selectSQL.append(column.toLowerCase());
-			insertSQL.append(column.toLowerCase());
+			selectSQL.append("\"" + column + "\"");
+			insertSQL.append("\"" + column + "\"");
 			values.append("?");
 		}
 		selectSQL.append(" FROM ");
@@ -287,7 +287,7 @@ public class DataMover {
 			statementSrc = source.prepareForwardStatement(selectSQL.toString());
 			statementSrc.setFetchSize(5000);
 			rs = statementSrc.executeQuery();
-			System.out.println(insertSQL.toString());
+
 			int rows = 0;
 			if (isDebugEnabled()) 
 				System.out.println("Copying data TABLE [" + table + "] ... ");

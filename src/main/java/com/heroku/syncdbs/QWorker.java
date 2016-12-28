@@ -89,34 +89,4 @@ public class QWorker {
 		return sdf.format(cal.getTime());
 	}
 	
-	
-//	public boolean jobidExistsInTable(String jobid) throws Exception{
-//		ResultSet rs = null;
-//		boolean ret = false;
-//		String sql = "SELECT jobid FROM syncdb.job_detail WHERE jobid='" + getJobid() + "' AND table='" + table + "' and " + column + "=" + value;
-//		rs = getSource().prepareStatement(sql).executeQuery();
-//		ret = rs.next();
-//		rs.close();
-//		return ret;
-//	}
-//
-//	private void logTask(String table, int rows){
-//		new Thread(() -> {
-//			try {
-//				String sql = "";
-//				if (tasknumExistsInTable(table, "tasknum", getTaskNum())){
-//					sql = "UPDATE syncdb.task SET index_loaded = " + rows +
-//							" WHERE jobid='" + getJobid() + "' AND table='" + table + "'";
-//				}else{
-//					sql = "INSERT INTO syncdb.task (jobid, table, tasknum, index_loaded) VALUES('" + getJobid() + "','" + table + "'," + getTaskNum() + "," + rows + ")";
-//				}
-//				getSource().execute(sql);
-//			} catch (Exception e) {
-//				System.err.println("Error while logging table [" + table + "] load for job id [" + getJobid() + "]" + e.getMessage());
-//			}
-//		
-//		}).start();
-//	}
-
-	
 }

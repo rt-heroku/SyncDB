@@ -177,7 +177,7 @@ public abstract class Database {
 				for (int i = 1; i <= md.getColumnCount(); i++) {
 					if (i != 1)
 						result.append(',');
-					result.append("\"" + md.getColumnName(i).toLowerCase() + "\"");
+					result.append("\"" + md.getColumnName(i) + "\"");
 					result.append(' ');
 	
 					String type = processType(md.getColumnTypeName(i), md
@@ -358,7 +358,7 @@ public abstract class Database {
 			dbm = connection.getMetaData();
 			rs = dbm.getColumns(null, schema, table.toLowerCase(), null);
 			while (rs.next()) {
-				result.add(rs.getString("COLUMN_NAME").toLowerCase());
+				result.add(rs.getString("COLUMN_NAME"));
 			}
 			rs.close();
 		} catch (SQLException e) {

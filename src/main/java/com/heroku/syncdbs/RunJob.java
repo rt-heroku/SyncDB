@@ -20,8 +20,6 @@ public class RunJob {
 
 	private static final String JOB_USER = "HEROKU CLI";
 
-
-
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
 		try {
