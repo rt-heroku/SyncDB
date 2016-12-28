@@ -164,7 +164,6 @@ public class DataMover {
 		for (String table : list) {
 			try {
 				if (!table.startsWith("pg_")) {
-					System.out.println("table to get max id = " + schema + "." + table);
 					int count = getTableMaxId(db, schema + "." + table);
 					m.put(table, count);
 				}
@@ -382,7 +381,7 @@ public class DataMover {
 				statementTrg.setInt(i, rs.getInt(i));
 		}
 
-		//if (isDebugEnabled())
+		if (isDebugEnabled())
 			System.out.println(statementTrg.toString());
 		statementTrg.execute();
 		return type;
@@ -407,10 +406,8 @@ public class DataMover {
 	}
 
 	public void copyChunkTable(String fromSchema, String toSchema, String table, int offset, int limit) throws DatabaseException{
-//		long t1 = System.currentTimeMillis();
 		setRowsLoaded(0);
 		createSelectAndInsertStatementsAndCopyTableData(fromSchema, toSchema, table, offset, limit);
-//		System.out.println("Table " + table + " chunk size[" + limit + "] copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 	}
 	public void exportDatabase(String fromSchema, String toSchema, String table) throws DatabaseException {
 		dropTableIfExistsAndCreateTable(fromSchema, toSchema, table, 0);

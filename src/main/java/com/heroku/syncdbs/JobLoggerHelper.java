@@ -111,7 +111,7 @@ public class JobLoggerHelper {
 			int numOfTasks, int chunkSize, String sourceDB, String targetDB) {
 		try {
 
-			String sql = "INSERT INTO syncdb.job (job_start,status,num_of_tasks,chunk_size,db_from, db_to, next_job,type ,\"user\",jobid, status_date) VALUES (?,?,?,?,?,?,?,?,?,?,?);";
+			String sql = "INSERT INTO syncdb.job (job_start,status,num_of_jobs,chunk_size,db_from, db_to, next_job,type ,\"user\",jobid, status_date) VALUES (?,?,?,?,?,?,?,?,?,?,?);";
 			PreparedStatement st = database.prepareStatement(sql);
 
 			Timestamp t = getTimestampNow();
@@ -155,7 +155,7 @@ public class JobLoggerHelper {
 			String sql = "";
 			if (tasknumExistsInTable(db, jobId, table, "tasknum", taskNum)) {
 				sql = "UPDATE syncdb.task SET index_loaded = " + rows + " WHERE jobid='" + jobId + "' AND \"table\"='"
-						+ table + "'";
+						+ table + "' AND tasknum=" + taskNum;
 			} else {
 				sql = "INSERT INTO syncdb.task (jobid, \"table\", tasknum, index_loaded) VALUES('" + jobId + "','"
 						+ table + "'," + taskNum + "," + rows + ")";
