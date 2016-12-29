@@ -39,7 +39,8 @@ public class QueueManager {
 
 	public void connect(String qn) throws Exception {
 		setChannel(getQChannel());
-
+		setQName(qn);
+		
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("x-ha-policy", "all");
 		getChannel().queueDeclare(qn, true, false, false, params);
@@ -65,7 +66,7 @@ public class QueueManager {
 	}
 
 	public String getQName() {
-		return qName;
+		return this.qName;
 	}
 
 	public void close() throws Exception{
@@ -77,7 +78,7 @@ public class QueueManager {
 	}
 
 	public QueueingConsumer getConsumer() {
-		return consumer;
+		return this.consumer;
 	}
 
 	private void setConsumer(QueueingConsumer workerConsumer) {
@@ -85,7 +86,7 @@ public class QueueManager {
 	}
 
 	public Channel getChannel() {
-		return channel;
+		return this.channel;
 	}
 
 	public void setChannel(Channel channel) {
