@@ -33,7 +33,7 @@ public class LogWorker {
 					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getJobnum(), jm.getTable(), jm.getStatus());
 
 					logQ.ack(delivery);
-
+//verify if the job is the last and all the others have finished........ then update jobdetail with details and job with status.......
 					logEndMessage(t1, jm);
 					
 				}
