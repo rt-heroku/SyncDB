@@ -85,7 +85,7 @@ public class JobMessage {
 		obj.put("jobnum", getJobnum());
 		obj.put("last", getLast());
 		obj.put("totaljobs", getTotalJobs());
-		obj.put("status", this.status.name());
+		obj.put("status", getStatus().name());
 		return obj;
 	}
 	
@@ -160,6 +160,9 @@ public class JobMessage {
 	}
 
 	public JobStatus getStatus() {
+		if (status == null)
+			return JobStatus.CREATED;
+		
 		return status;
 	}
 
