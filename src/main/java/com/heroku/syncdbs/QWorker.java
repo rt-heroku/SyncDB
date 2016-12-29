@@ -3,6 +3,7 @@ package com.heroku.syncdbs;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import com.heroku.syncdbs.enums.JobStatus;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class QWorker {
@@ -33,6 +34,9 @@ public class QWorker {
 					long t1 = System.currentTimeMillis();
 					JobMessage jm = new JobMessage(delivery.getBody());
 
+					jm.setStatus(JobStatus.PROCESSING);
+					logQ.sendMessage(jm);
+					
 					logStartMessage(jm);
 
 					syncDB.copyTableChunk(jm);
@@ -41,6 +45,7 @@ public class QWorker {
 
 					logEndMessage(t1, jm);
 					
+					jm.setStatus(JobStatus.FINISHED);
 					logQ.sendMessage(jm);
 				}
 			}

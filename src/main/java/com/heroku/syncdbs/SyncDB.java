@@ -72,7 +72,7 @@ public class SyncDB {
 			getMover().setJobid(jm.getJobid());
 			getMover().setTaskNum(jm.getJobnum());
 			
-			getMover().copyChunkTable(getFromSchema(), getToSchema(), jm.getTable(), jm.getOffset(), jm.getOffset());
+			getMover().copyChunkTable(getFromSchema(), getToSchema(), jm.getTable(), jm.getOffset(), jm.getMaxid());
 			return getMover().getRowsLoaded();
 			
 		} catch (Exception e) {

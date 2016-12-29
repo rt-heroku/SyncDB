@@ -6,6 +6,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.heroku.syncdbs.enums.JobStatus;
+
 public class JobMessage {
 
 	private String jobid;
@@ -16,6 +18,7 @@ public class JobMessage {
 	private Integer jobnum;
 	private Integer totalJobs;
 	private Boolean last;
+	private JobStatus status;
 	
 	private JSONParser parser = null;
 	private JSONObject jobj = null;
@@ -49,6 +52,7 @@ public class JobMessage {
 		this.jobnum = jobnum;
 		this.totalJobs = totalJobs;
 		this.last = last;
+		this.status = JobStatus.CREATED;
 	}
 
 	private void setJsonAndParseMessage(String json) throws ParseException {
@@ -66,7 +70,8 @@ public class JobMessage {
 		this.jobnum = new Integer(jobj.get("jobnum").toString());
 		this.totalJobs = new Integer(jobj.get("totaljobs").toString());
 		this.maxid = new Integer(jobj.get("maxid").toString());
-		
+		this.status = JobStatus.valueOf(jobj.get("status").toString());
+	
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -80,6 +85,7 @@ public class JobMessage {
 		obj.put("jobnum", getJobnum());
 		obj.put("last", getLast());
 		obj.put("totaljobs", getTotalJobs());
+		obj.put("status", this.status.name());
 		return obj;
 	}
 	
@@ -96,6 +102,7 @@ public class JobMessage {
 		jobj.put("jobnum", getJobnum());
 		jobj.put("last", getLast());
 		jobj.put("totaljobs", getTotalJobs());
+		jobj.put("status", this.status.name());
 		return jobj;
 	}
 
@@ -150,6 +157,14 @@ public class JobMessage {
 	}
 	public void setLast(Boolean last) {
 		this.last = last;
+	}
+
+	public JobStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(JobStatus status) {
+		this.status = status;
 	}
 	
 }

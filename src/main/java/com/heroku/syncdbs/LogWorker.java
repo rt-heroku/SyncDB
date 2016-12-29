@@ -3,7 +3,6 @@ package com.heroku.syncdbs;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-import com.heroku.syncdbs.enums.JobStatus;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class LogWorker {
@@ -31,7 +30,7 @@ public class LogWorker {
 					long t1 = System.currentTimeMillis();
 					JobMessage jm = new JobMessage(delivery.getBody());
 
-					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getJobnum(), jm.getTable(), JobStatus.FINISHED);
+					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getJobnum(), jm.getTable(), jm.getStatus());
 
 					logQ.ack(delivery);
 
