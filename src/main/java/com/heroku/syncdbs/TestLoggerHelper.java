@@ -8,8 +8,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
-import org.json.simple.JSONObject;
-
 import com.heroku.syncdbs.datamover.Database;
 import com.heroku.syncdbs.enums.JobStatus;
 import com.heroku.syncdbs.enums.JobType;
@@ -17,13 +15,12 @@ import com.heroku.syncdbs.enums.JobType;
 public class TestLoggerHelper {
 	private static final String JOB_USER = "HEROKU CLI TESTER";
 
-	@SuppressWarnings("unchecked")
 	public static void main(String[] args) throws Exception {
 		String jobid = UUID.randomUUID().toString();
-		Main main = new Main();
-		main.connectBothDBsUsingJDBC();
+		SyncDB syncDB = new SyncDB();
+		syncDB.connectBothDBsUsingJDBC();
 		
-		Database sourceDb = main.getSource();
+		Database sourceDb = syncDB.getSource();
 		
 		int chunk = 20000;
 		int indexOfTable = 0;
@@ -31,60 +28,60 @@ public class TestLoggerHelper {
 		Map<String, Integer> data = getTableTestData();
 		Set<String> tables = data.keySet();
 		//TEST 1
-		JobLoggerHelper.logJob(sourceDb, jobid, JobType.MANUAL_CLI, JOB_USER, JobStatus.CREATED, tables.size(), chunk, main.getSourceDatabase(), main.getTargetDatabase());
+		JobLoggerHelper.logJob(sourceDb, jobid, JobType.MANUAL_CLI, JOB_USER, JobStatus.CREATED, tables.size(), chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
 		JobLoggerHelper.logJobStatus(sourceDb, jobid, JobStatus.CREATED);
 
 		//TEST 2
 		for (String table : data.keySet()) {
-			int count = data.get(table).intValue();
-			List<JSONObject> tasks = new ArrayList<JSONObject>();
+			int maxid = data.get(table).intValue();
+			List<JobMessage> tasks = new ArrayList<JobMessage>();
 			
-			int job = 0;
-			int jobChunk = count;
+			int jobnum = 0;
+			int jobChunk = maxid;
 			int offset = 0;
 
 			indexOfTable++;
 			//Analyzing jobs
 			while (jobChunk > 0) {
-				JSONObject obj = new JSONObject();
+				JobMessage jm = new JobMessage();
 
 				jobChunk = jobChunk - chunk;
-				job++;
+				jobnum++;
 
-				obj.put("jobid", jobid);
-				obj.put("table", table);
-				obj.put("maxid", count);
-				obj.put("offset", offset);
-				obj.put("chunk", chunk);
-				obj.put("jobnum", job);
-
+				jm.setJobid(jobid);
+				jm.setTable(table);
+				jm.setMaxid(maxid);
+				jm.setOffset(offset);
+				jm.setChunk(chunk);
+				jm.setJobnum(jobnum);
+				
 				offset = offset + chunk;
 
-				if  (!(jobChunk > 0))
-					obj.put("last", true);
+				if  (jobChunk <= 0)
+					jm.setLast(true);
 				else
-					obj.put("last", false);
+					jm.setLast(false);
 					
-				tasks.add(obj);
+				tasks.add(jm);
 			}
 			
 			//Log Job details
-			JobLoggerHelper.logJobDetail(sourceDb, jobid, table, indexOfTable, job, count, JobStatus.CREATED, "");
+			JobLoggerHelper.logJobDetail(sourceDb, jobid, table, indexOfTable, jobnum, maxid, JobStatus.CREATED, "");
 
 			JobLoggerHelper.logJobStatus(sourceDb, jobid, JobStatus.ANALYZED);
 			//Sending tasks
-			for (JSONObject o : tasks){
-				o.put("totaljobs", job);
+			for (JobMessage o : tasks){
+				o.setTotalJobs(jobnum);
 
-				JobLoggerHelper.logInitialTask(sourceDb, o.get("table").toString(), o.get("jobid").toString(), o.get("jobnum").toString());
+				JobLoggerHelper.logInitialTask(sourceDb, o);
 				
 			}
 			JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.SENT);
 
 			//Emulates Task processing in Worker!!!			
-			for (JSONObject o : tasks){
-				JobLoggerHelper.logTask(sourceDb, jobid, getIntValue(o.get("jobnum")),table,1000);
-				System.out.println(o.toJSONString());
+			for (JobMessage o : tasks){
+				JobLoggerHelper.logTask(sourceDb, jobid, o.getJobnum(),table,1000);
+				System.out.println(o.toJson());
 			}
 			JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table, JobStatus.SENT, indexOfTable, tasks.toString());
 		}
@@ -92,7 +89,7 @@ public class TestLoggerHelper {
 		
 	}
 	
-	private static int getIntValue(Object o) {
+	public static int getIntValue(Object o) {
 		try {
 			Integer i = new Integer(o.toString());
 			return i.intValue();

@@ -10,7 +10,7 @@ import com.heroku.syncdbs.datamover.Database;
 import com.heroku.syncdbs.datamover.DatabaseException;
 import com.heroku.syncdbs.datamover.PostgreSQL;
 
-public class Main {
+public class SyncDB {
 
 	public static String SOURCE_VAR = "SOURCE_VAR";
 	public static String TARGET_VAR = "TARGET_VAR";
@@ -25,11 +25,11 @@ public class Main {
 	}
 
 	public static void main(String[] args) throws Exception {
-		Main main = new Main();
-		String fromSchema = main.getFromSchema();
-		String toSchema = main.getToSchema();
+		SyncDB syncDB = new SyncDB();
+		String fromSchema = syncDB.getFromSchema();
+		String toSchema = syncDB.getToSchema();
 		
-		main.copyData(fromSchema, toSchema);
+		syncDB.copyData(fromSchema, toSchema);
 	}
 
 	protected void copyData(String fromSchema, String toSchema) throws Exception {
@@ -64,15 +64,15 @@ public class Main {
 		}
 	}
 
-	protected int copyTableChunk(String fromSchema, String toSchema, String table, Integer offset, Integer limit, Integer job, String jobid) throws Exception {
+	protected int copyTableChunk(JobMessage jm) throws Exception {
 		try {
 			validateConnection("target");
 			validateConnection("source");
 			
-			getMover().setJobid(jobid);
-			getMover().setTaskNum(job);
+			getMover().setJobid(jm.getJobid());
+			getMover().setTaskNum(jm.getJobnum());
 			
-			getMover().copyChunkTable(fromSchema, toSchema, table, offset, limit);
+			getMover().copyChunkTable(getFromSchema(), getToSchema(), jm.getTable(), jm.getOffset(), jm.getOffset());
 			return getMover().getRowsLoaded();
 			
 		} catch (Exception e) {
@@ -160,10 +160,12 @@ public class Main {
 
 	protected void connectToSource() throws SQLException{
 		connectToSource(getSource());
+		getMover().setSource(getSource());
 	}
 	
 	protected void connectToTarget() throws SQLException{
 		connectToTarget(getTarget());
+		getMover().setTarget(getTarget());
 	}
 	
 	protected void closeConnectionToSource() throws Exception{

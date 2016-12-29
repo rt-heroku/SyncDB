@@ -2,23 +2,15 @@ package com.heroku.syncdbs;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.heroku.syncdbs.enums.JobStatus;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class LogWorker {
-
-	private JSONParser parser = null;
+	public static final String LOG_QUEUE_NAME = "LOG_QUEUE_NAME";
+	private QueueManager logQ = new QueueManager();
 
 	public LogWorker() {
-		parser = new JSONParser();
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -27,37 +19,28 @@ public class LogWorker {
 	}
 
 	public void run() throws Exception {
-		ConnectionFactory factory = new ConnectionFactory();
-		factory.setUri(System.getenv("RABBITMQ_BIGWIG_URL"));
-
-		Map<String, Object> params = new HashMap<String, Object>();
-		Connection connection = factory.newConnection();
-		Channel channel = connection.createChannel();
-
-		String queueName = "" + System.getenv("LOG_QUEUE_NAME");
-		params.put("x-ha-policy", "all");
-		channel.queueDeclare(queueName, true, false, false, params);
-		channel.basicQos(1);
-
-		QueueingConsumer consumer = new QueueingConsumer(channel);
-		channel.basicConsume(queueName, false, consumer);
-
-		Main main = new Main();
-		main.connectToSource();
+		SyncDB syncDB = new SyncDB();
+		syncDB.connectBothDBs();
+		
+		logQ.connect(System.getenv(LOG_QUEUE_NAME));
+		
 		try {
 			while (true) {
-				QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+				QueueingConsumer.Delivery delivery = logQ.nextDelivery();
 				if (delivery != null) {
-					String msg = new String(delivery.getBody(), "UTF-8");
-					JSONObject jobj = (JSONObject) parser.parse(msg);
+					long t1 = System.currentTimeMillis();
+					JobMessage jm = new JobMessage(delivery.getBody());
 
-					System.out.println("DEBUG: Logging -- " + jobj.toJSONString());
+					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getJobnum(), jm.getTable(), JobStatus.FINISHED);
+
+					logQ.ack(delivery);
+
+					logEndMessage(t1, jm);
 					
-					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 				}
 			}
 		} catch (Exception e) {
-			main.closeBothConnections();
+			syncDB.closeBothConnections();
 			throw e;
 		}
 	}
@@ -65,5 +48,12 @@ public class LogWorker {
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		return sdf.format(cal.getTime());
+	}
+	protected void logEndMessage(long t1, JobMessage jm) {
+		String logmsg;
+		long seconds = (System.currentTimeMillis() - t1) / 1000;
+		logmsg = "LogWorker ENDED     [" + getCurrentTime() + "] Job ID [" + jm.getJobid() + "] (" + jm.getJobnum()
+				+ " of " + jm.getTotalJobs() + ") in [" + seconds + "] seconds for table [" + jm.getTable() + "] !";
+		System.out.println(logmsg);
 	}
 }

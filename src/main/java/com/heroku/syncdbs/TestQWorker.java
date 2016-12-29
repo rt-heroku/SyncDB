@@ -13,32 +13,28 @@ public class TestQWorker {
 	}
 
 	public void run() throws Exception {
-
-		Main main = new Main();
-		main.connectBothDBsUsingJDBC();
-		String fromSchema = main.getFromSchema();
-		String toSchema = main.getToSchema();
+		SyncDB syncDB = new SyncDB();
+		syncDB.connectBothDBsUsingJDBC();
 
 		try {
 
-					String table = "do_not_go_to_cyan";
-					Integer offset = 0;
-					Integer limit = 150000;
-					Integer job = 1;
-					String jobid = UUID.randomUUID().toString();//"cef5ff23-c8f8-42d0-94ee-6609cdf0d69a";
-					System.out.println("QWorker Job ID[" + jobid + "]");
-					
-					main.dropAndRecreateTableInTargetIfExists(table, 120324);
-					
-					JobLoggerHelper.logInitialTask(main.getSource(), table, jobid, job.toString());
-					
-					main.copyTableChunk(fromSchema, toSchema, table, offset, limit, job, jobid);
+			JobMessage jm = new JobMessage();
+			jm.setTable("do_not_go_to_cyan");
+			jm.setOffset(0);
+			jm.setMaxid(150000);
+			jm.setJobnum(1);
+			jm.setJobid(UUID.randomUUID().toString());
+			System.out.println("QWorker Job ID[" + jm.getJobid() + "]");
 
-					main.closeBothConnections();
+			syncDB.dropAndRecreateTableInTargetIfExists(jm.getTable(), 120324);
 
+			JobLoggerHelper.logInitialTask(syncDB.getSource(), jm);
+
+			syncDB.copyTableChunk(jm);
 		} catch (Exception e) {
-			main.closeBothConnections();
 			throw e;
+		} finally {
+			syncDB.closeBothConnections();
 		}
 	}
 }

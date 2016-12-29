@@ -72,9 +72,9 @@ public class ScheduleJob {
 				params.put("x-ha-policy", "all");
 				channel.queueDeclare(queueName, true, false, false, params);
 
-				Main main = new Main();
-				main.connectBothDBs();
-				Map<String, Integer> tables = main.getTablesToMoveFromSourceAndGetTheMaxId();
+				SyncDB syncDB = new SyncDB();
+				syncDB.connectBothDBs();
+				Map<String, Integer> tables = syncDB.getTablesToMoveFromSourceAndGetTheMaxId();
 				int chunk = getChunkSize(100000);
 
 				for (String table : tables.keySet()) {
@@ -85,7 +85,7 @@ public class ScheduleJob {
 					int jobChunk = count;
 					int offset = 0;
 
-					main.dropAndRecreateTableInTargetIfExists(table, count);
+					syncDB.dropAndRecreateTableInTargetIfExists(table, count);
 
 					while (jobChunk > 0) {
 
@@ -108,7 +108,7 @@ public class ScheduleJob {
 					}
 				}
 
-				main.closeBothConnections();
+				syncDB.closeBothConnections();
 				connection.close();
 
 			} catch (Exception e) {

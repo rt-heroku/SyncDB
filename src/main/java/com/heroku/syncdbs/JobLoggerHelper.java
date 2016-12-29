@@ -95,11 +95,21 @@ public class JobLoggerHelper {
 
 	}
 
-	public static void logInitialTask(Database db, String table, String jobId, String taskNum) {
+	public static void logInitialTask(Database db, JobMessage jm) {
+		logInitialTask(db, jm.getTable(), jm.getJobid(), jm.getJobnum());
+	}
+	public static void logInitialTask(Database db, String table, String jobId, int taskNum) {
 		try {
-			String sql = "INSERT INTO syncdb.task (jobid, \"table\", tasknum, index_loaded) VALUES('" + jobId + "','"
-					+ table + "'," + taskNum + ",0)";
-			db.execute(sql);
+			String sql = "INSERT INTO syncdb.task (jobid, \"table\", tasknum, index_loaded, status, status_date) VALUES(?,?,?,?,?,?)";
+			PreparedStatement st = db.prepareStatement(sql);
+			st.setString(1, jobId);
+			st.setString(2, table);
+			st.setInt(3, taskNum);
+			st.setInt(4, 0);
+			st.setString(5, JobStatus.SENT.name());
+			st.setTimestamp(6, getTimestampNow());
+			st.execute();
+			st.close();
 		} catch (Exception e) {
 			System.err.println(
 					"Error while logging table [" + table + "] load for job id [" + jobId + "]" + e.getMessage());
@@ -165,6 +175,27 @@ public class JobLoggerHelper {
 			System.err.println(
 					"Error while logging table [" + table + "] load for job id [" + jobId + "]" + e.getMessage());
 		}
+	}
+	public static void logTaskStatus(Database db, String jobId, int taskNum, String table, JobStatus j) {
+		try {
+
+			String sql = "UPDATE syncdb.task SET status = ?, status_date = ? WHERE jobid = ? and \"table\" =  ? and tasknum = ?";
+			PreparedStatement st = db.prepareStatement(sql);
+
+			st.setString(1, j.name());
+			st.setTimestamp(2, getTimestampNow());
+			st.setString(3, jobId);
+			st.setString(4, table);
+			st.setInt(5, taskNum);
+
+			st.execute();
+			st.close();
+
+		} catch (Exception e) {
+			System.err.println("Error logging Job - " + e.getMessage());
+			e.printStackTrace();
+		}
+
 	}
 
 }

@@ -2,23 +2,16 @@ package com.heroku.syncdbs;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class QWorker {
-
-	private JSONParser parser = null;
-
-	public QWorker() {
-		parser = new JSONParser();
+	public static final String LOG_QUEUE_NAME = "LOG_QUEUE_NAME";
+	public static final String WORKER_QUEUE_NAME = "QUEUE_NAME";
+	private QueueManager workerQ = new QueueManager();
+	private QueueManager logQ = new QueueManager();
+	
+	public QWorker() throws Exception {
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -27,66 +20,56 @@ public class QWorker {
 	}
 
 	public void run() throws Exception {
-		ConnectionFactory factory = new ConnectionFactory();
-		factory.setUri(System.getenv("RABBITMQ_BIGWIG_URL"));
-
-		Map<String, Object> params = new HashMap<String, Object>();
-		Connection connection = factory.newConnection();
-		Channel channel = connection.createChannel();
-
-		String queueName = "" + System.getenv("QUEUE_NAME");
-		params.put("x-ha-policy", "all");
-		channel.queueDeclare(queueName, true, false, false, params);
-		channel.basicQos(1);
-
-		QueueingConsumer consumer = new QueueingConsumer(channel);
-		channel.basicConsume(queueName, false, consumer);
-
-		Main main = new Main();
-		main.connectBothDBs();
-		String fromSchema = main.getFromSchema();
-		String toSchema = main.getToSchema();
+		SyncDB syncDB = new SyncDB();
+		syncDB.connectBothDBs();
+		
+		workerQ.connect(System.getenv(WORKER_QUEUE_NAME));
+		logQ.connect(System.getenv(LOG_QUEUE_NAME));
+		
 		try {
 			while (true) {
-				QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+				QueueingConsumer.Delivery delivery = workerQ.nextDelivery();
 				if (delivery != null) {
 					long t1 = System.currentTimeMillis();
+					JobMessage jm = new JobMessage(delivery.getBody());
 
-					String msg = new String(delivery.getBody(), "UTF-8");
-					JSONObject jobj = (JSONObject) parser.parse(msg);
+					logStartMessage(jm);
 
-					String jobid = (String) jobj.get("jobid");
-					String table = (String) jobj.get("table");
-					Integer offset = new Integer(jobj.get("offset").toString());
-					Integer chunk = new Integer(jobj.get("chunk").toString());
-					Integer jobnum = new Integer(jobj.get("jobnum").toString());
-					Integer totalJobs = new Integer(jobj.get("totaljobs").toString());
+					syncDB.copyTableChunk(jm);
+
+					workerQ.ack(delivery);
+
+					logEndMessage(t1, jm);
 					
-					//log initial task
-					// log milliseconds in 0
-					String current = getCurrentTime();
-					String logmsg = "QWorker Starting [" + current + "] Job ID[" + jobid + "] (" + jobnum + " of " + totalJobs + ") ---- Message Received: " + jobj.toJSONString();
-					System.out.println(logmsg);
-					main.copyTableChunk(fromSchema, toSchema, table, offset, chunk, jobnum, jobid);
-
-					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-
-					long t2 = System.currentTimeMillis();
-					//log final task data with t2, 
-					long seconds = (t2 - t1) /1000;
-					logmsg = "QWorker ENDED     ["+ getCurrentTime() + "] Job ID [" + jobid + "] (" + jobnum + " of " + totalJobs + ") in [" + seconds + "] seconds for table [" + table + "] !";
-					System.out.println(logmsg);
+					logQ.sendMessage(jm);
 				}
 			}
 		} catch (Exception e) {
-			main.closeBothConnections();
+			syncDB.closeBothConnections();
 			throw e;
 		}
 	}
+
+
+	protected void logStartMessage(JobMessage jm) {
+		String current = getCurrentTime();
+		String logmsg = "QWorker Starting [" + current + "] Job ID[" + jm.getJobid() + "] (" + jm.getJobnum() + " of "
+				+ jm.getTotalJobs() + ") ---- Message Received: " + jm.toJson();
+		System.out.println(logmsg);
+	}
+
+	protected void logEndMessage(long t1, JobMessage jm) {
+		String logmsg;
+		long seconds = (System.currentTimeMillis() - t1) / 1000;
+		logmsg = "QWorker ENDED     [" + getCurrentTime() + "] Job ID [" + jm.getJobid() + "] (" + jm.getJobnum()
+				+ " of " + jm.getTotalJobs() + ") in [" + seconds + "] seconds for table [" + jm.getTable() + "] !";
+		System.out.println(logmsg);
+	}
+
 	protected static String getCurrentTime() {
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 		return sdf.format(cal.getTime());
 	}
-	
+
 }

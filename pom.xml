@@ -49,7 +49,7 @@
 					<assembleDirectory>target</assembleDirectory>
 					<programs>
 						<program>
-							<mainClass>com.heroku.syncdbs.Main</mainClass>
+							<mainClass>com.heroku.syncdbs.SyncDB</mainClass>
 							<name>main</name>
 						</program>
 						<program>
