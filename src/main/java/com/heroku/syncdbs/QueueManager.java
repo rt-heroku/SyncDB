@@ -45,7 +45,7 @@ public class QueueManager {
 		params.put("x-ha-policy", "all");
 		getChannel().queueDeclare(qn, true, false, false, params);
 		getChannel().basicQos(1);
-
+		System.out.println("Listening for messages on queue [" + qn + "]");
 	}
 
 	public void ack(Delivery delivery) throws Exception {
