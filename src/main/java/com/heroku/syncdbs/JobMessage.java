@@ -85,6 +85,9 @@ public class JobMessage {
 	
 	@SuppressWarnings("unchecked")
 	public JSONObject getJsonObject(){
+		if (jobj == null)
+			jobj = new JSONObject();
+		
 		jobj.put("jobid", getJobid());
 		jobj.put("table", getTable());
 		jobj.put("maxid", getMaxid());
