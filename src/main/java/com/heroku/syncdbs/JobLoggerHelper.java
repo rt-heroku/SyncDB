@@ -60,7 +60,7 @@ public class JobLoggerHelper {
 
 			st.execute();
 			st.close();
-			System.out.println("Job [" + jobid + "] - " + jobStatus.name());
+			System.out.println("JobDetail [" + jobid + "] - " + jobStatus.name());
 
 		} catch (Exception e) {
 			System.err.println("Error logging Job - " + e.getMessage());
@@ -200,7 +200,12 @@ public class JobLoggerHelper {
 
 	}
 	public static void analyzeJobTask(Database db, JobMessage jm) throws SQLException, DatabaseException {
-		if (countFinishedTasks(db, jm) == jm.getTotalJobs()){
+		int jobs = jm.getTotalJobs();
+		int count = countFinishedTasks(db, jm);
+
+		System.out.println("count = " + count + " jobs = " + jobs);
+		
+		if (count == jobs){
 			JobLoggerHelper.logJobDetailStatus(db, jm.getJobid(), jm.getTable(), JobStatus.FINISHED, jm.getJobnum(), "");
 			analyzeJobDetails(db, jm);
 		}
@@ -208,7 +213,11 @@ public class JobLoggerHelper {
 
 	private static void analyzeJobDetails(Database db, JobMessage jm) throws SQLException, DatabaseException {
 		int jobs = getNumOfJobs(db, jm.getJobid());
-		if(countFinishedJobs(db, jm) > jobs)
+		int count = countFinishedJobs(db, jm);
+		
+		System.out.println("count = " + count + " jobs = " + jobs);
+		
+		if(count == jobs)
 			JobLoggerHelper.logJobStatus(db, jm.getJobid(), JobStatus.FINISHED);
 		
 	}

@@ -70,7 +70,7 @@ public class SyncDB {
 			validateConnection("source");
 			
 			getMover().setJobid(jm.getJobid());
-			getMover().setTaskNum(jm.getJobnum());
+			getMover().setTaskNum(jm.getTasknum());
 			
 			getMover().copyChunkTable(getFromSchema(), getToSchema(), jm.getTable(), jm.getOffset(), jm.getChunk());
 			return getMover().getRowsLoaded();
