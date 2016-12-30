@@ -85,7 +85,7 @@ public class TestLoggerHelper {
 			}
 			JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table, JobStatus.SENT, indexOfTable, tasks.toString());
 		}
-		JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.FINISHED);
+//		JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.FINISHED);
 		
 	}
 	

@@ -44,6 +44,27 @@ public class JobLoggerHelper {
 
 	}
 
+	public static void logEndOfJob(Database db, String jobid) {
+		try {
+
+			String sql = "UPDATE syncdb.job SET status = ?, status_date = ?, job_end = ? WHERE jobid = ?";
+			PreparedStatement st = db.prepareStatement(sql);
+
+			st.setString(1, JobStatus.FINISHED.name());
+			st.setTimestamp(2, getTimestampNow());
+			st.setTimestamp(3, getTimestampNow());
+			st.setString(4, jobid);
+
+			st.execute();
+			st.close();
+			System.out.println("Job [" + jobid + "] - FINISHED");
+
+		} catch (Exception e) {
+			System.err.println("Error logging Job - " + e.getMessage());
+			e.printStackTrace();
+		}
+
+	}
 	public static void logJobDetailStatus(Database db, String jobid, String table, JobStatus jobStatus,
 			int jobNum, String comment) {
 		try {
@@ -203,10 +224,8 @@ public class JobLoggerHelper {
 		int jobs = jm.getTotalJobs();
 		int count = countFinishedTasks(db, jm);
 
-		System.out.println("count = " + count + " jobs = " + jobs);
-		
 		if (count == jobs){
-			JobLoggerHelper.logJobDetailStatus(db, jm.getJobid(), jm.getTable(), JobStatus.FINISHED, jm.getJobnum(), "");
+			logJobDetailStatus(db, jm.getJobid(), jm.getTable(), JobStatus.FINISHED, jm.getJobnum(), "");
 			analyzeJobDetails(db, jm);
 		}
 	}
@@ -214,11 +233,9 @@ public class JobLoggerHelper {
 	private static void analyzeJobDetails(Database db, JobMessage jm) throws SQLException, DatabaseException {
 		int jobs = getNumOfJobs(db, jm.getJobid());
 		int count = countFinishedJobs(db, jm);
-		
-		System.out.println("count = " + count + " jobs = " + jobs);
-		
+
 		if(count == jobs)
-			JobLoggerHelper.logJobStatus(db, jm.getJobid(), JobStatus.FINISHED);
+			logEndOfJob(db, jm.getJobid());
 		
 	}
 

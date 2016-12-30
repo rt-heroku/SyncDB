@@ -69,9 +69,7 @@ public class RunJob {
 
 				JobLoggerHelper.logJobDetail(sourceDb, jobid, table, jobnum, tasknum, maxid, JobStatus.CREATED, "");
 
-				//Send tasks to Q
 				for (JobMessage o : tasks){
-					//Adds number of total jobs before sending
 					o.setTotalJobs(tasknum);
 
 					workerQ.sendMessage(o);

@@ -56,7 +56,7 @@ public class LogWorker {
 	protected void logEndMessage(long t1, JobMessage jm) {
 		String logmsg;
 		long seconds = (System.currentTimeMillis() - t1) / 1000;
-		logmsg = "LogWorker ENDED     [" + getCurrentTime() + "] Job ID [" + jm.getJobid() + "] (" + jm.getJobnum()
+		logmsg = "LogWorker ENDED     [" + getCurrentTime() + "] Job ID [" + jm.getJobid() + "] (" + jm.getTasknum()
 				+ " of " + jm.getTotalJobs() + ") in [" + seconds + "] seconds for table [" + jm.getTable() + "] !";
 		System.out.println(logmsg);
 	}
