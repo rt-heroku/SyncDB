@@ -19,6 +19,7 @@ public class JobMessage {
 	private Integer totalJobs;
 	private Boolean last;
 	private JobStatus status;
+	private Integer tasknum;
 	
 	private JSONParser parser = null;
 	private JSONObject jobj = null;
@@ -42,7 +43,7 @@ public class JobMessage {
 	}
 	
 	public JobMessage(String jobid, String table, Integer maxid, Integer offset, Integer chunk, Integer jobnum,
-			Integer totalJobs, Boolean last) {
+			Integer totalJobs, Boolean last, Integer tasknum) {
 		super();
 		this.jobid = jobid;
 		this.table = table;
@@ -53,6 +54,7 @@ public class JobMessage {
 		this.totalJobs = totalJobs;
 		this.last = last;
 		this.status = JobStatus.CREATED;
+		this.tasknum = tasknum;
 	}
 
 	private void setJsonAndParseMessage(String json) throws ParseException {
@@ -71,7 +73,7 @@ public class JobMessage {
 		this.totalJobs = new Integer(jobj.get("totaljobs").toString());
 		this.maxid = new Integer(jobj.get("maxid").toString());
 		this.status = JobStatus.valueOf(jobj.get("status").toString());
-	
+		this.tasknum = new Integer(jobj.get("tasknum").toString());
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -86,6 +88,7 @@ public class JobMessage {
 		obj.put("last", getLast());
 		obj.put("totaljobs", getTotalJobs());
 		obj.put("status", getStatus().name());
+		obj.put("tasknum", getTasknum());
 		return obj;
 	}
 	
@@ -103,6 +106,7 @@ public class JobMessage {
 		jobj.put("last", getLast());
 		jobj.put("totaljobs", getTotalJobs());
 		jobj.put("status", this.status.name());
+		jobj.put("tasknum", getTasknum());
 		return jobj;
 	}
 
@@ -168,6 +172,14 @@ public class JobMessage {
 
 	public void setStatus(JobStatus status) {
 		this.status = status;
+	}
+
+	public Integer getTasknum() {
+		return tasknum;
+	}
+
+	public void setTasknum(Integer tasknum) {
+		this.tasknum = tasknum;
 	}
 	
 }

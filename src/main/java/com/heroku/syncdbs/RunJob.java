@@ -28,17 +28,17 @@ public class RunJob {
 
 			Database sourceDb = syncDB.getSource();
 			
-			int indexOfTable = 0;
+			int jobnum = 0;
 			JobLoggerHelper.logJob(sourceDb, jobid, JobType.MANUAL_CLI, JOB_USER, JobStatus.CREATED, tables.size(), chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
 			
 			for (String table : tables.keySet()) {
 				List<JobMessage> tasks = new ArrayList<JobMessage>();
 				int maxid = tables.get(table).intValue();
-				int jobnum = 0;
+				int tasknum = 0;
 				int jobChunk = maxid;
 				int offset = 0;
 
-				indexOfTable++;
+				jobnum++;
 
 				syncDB.dropAndRecreateTableInTargetIfExists(table, maxid);
 				
@@ -47,13 +47,14 @@ public class RunJob {
 					JobMessage jm = new JobMessage();
 
 					jobChunk = jobChunk - chunk;
-					jobnum++;
+					tasknum++;
 
 					jm.setJobid(jobid);
 					jm.setTable(table);
 					jm.setMaxid(maxid);
 					jm.setOffset(offset);
 					jm.setChunk(chunk);
+					jm.setTasknum(tasknum);
 					jm.setJobnum(jobnum);
 					
 					offset = offset + chunk;
@@ -66,21 +67,21 @@ public class RunJob {
 					tasks.add(jm);
 				}
 
-				JobLoggerHelper.logJobDetail(sourceDb, jobid, table, indexOfTable, jobnum, maxid, JobStatus.CREATED, "");
+				JobLoggerHelper.logJobDetail(sourceDb, jobid, table, jobnum, tasknum, maxid, JobStatus.CREATED, "");
 
 				//Send tasks to Q
 				for (JobMessage o : tasks){
 					//Adds number of total jobs before sending
-					o.setTotalJobs(jobnum);
+					o.setTotalJobs(tasknum);
 
 					workerQ.sendMessage(o);
 					
 					JobLoggerHelper.logInitialTask(sourceDb, o);					
-					logPublishingJob(jobnum, o);
+					logPublishingJob(tasknum, o);
 					
 				}
 
-				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table, JobStatus.SENT, indexOfTable, tasks.toString());
+				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table, JobStatus.SENT, jobnum, tasks.toString());
 
 			}
 			JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.SENT);

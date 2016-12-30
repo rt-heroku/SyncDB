@@ -2,10 +2,12 @@ package com.heroku.syncdbs;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
 import com.heroku.syncdbs.datamover.Database;
+import com.heroku.syncdbs.datamover.DatabaseException;
 import com.heroku.syncdbs.enums.JobStatus;
 import com.heroku.syncdbs.enums.JobType;
 
@@ -43,7 +45,7 @@ public class JobLoggerHelper {
 	}
 
 	public static void logJobDetailStatus(Database db, String jobid, String table, JobStatus jobStatus,
-			int indexOfTable, String comment) {
+			int jobNum, String comment) {
 		try {
 
 			String sql = "UPDATE syncdb.job_detail SET status = ?, status_date = ?, comment = ? WHERE jobid = ? and \"table\" =  ? and job_num = ?";
@@ -54,7 +56,7 @@ public class JobLoggerHelper {
 			st.setString(3, comment);
 			st.setString(4, jobid);
 			st.setString(5, table);
-			st.setInt(6, indexOfTable);
+			st.setInt(6, jobNum);
 
 			st.execute();
 			st.close();
@@ -67,7 +69,7 @@ public class JobLoggerHelper {
 
 	}
 
-	public static void logJobDetail(Database db, String jobid, String table, int indexOfTable, int numOfJobs, int maxid,
+	public static void logJobDetail(Database db, String jobid, String table, int jobNum, int numOfJobs, int maxid,
 			JobStatus status, String comment) {
 		try {
 
@@ -82,7 +84,7 @@ public class JobLoggerHelper {
 			st.setString(4, comment);
 			st.setString(5, table);
 			st.setInt(6, numOfJobs);
-			st.setInt(7, indexOfTable);
+			st.setInt(7, jobNum);
 			st.setInt(8, maxid);
 
 			st.execute();
@@ -96,7 +98,7 @@ public class JobLoggerHelper {
 	}
 
 	public static void logInitialTask(Database db, JobMessage jm) {
-		logInitialTask(db, jm.getTable(), jm.getJobid(), jm.getJobnum());
+		logInitialTask(db, jm.getTable(), jm.getJobid(), jm.getTasknum());
 	}
 	public static void logInitialTask(Database db, String table, String jobId, int taskNum) {
 		try {
@@ -196,6 +198,53 @@ public class JobLoggerHelper {
 			e.printStackTrace();
 		}
 
+	}
+	public static void analyzeJobTask(Database db, JobMessage jm) throws SQLException, DatabaseException {
+		if (countFinishedTasks(db, jm) == jm.getTotalJobs()){
+			JobLoggerHelper.logJobDetailStatus(db, jm.getJobid(), jm.getTable(), JobStatus.FINISHED, jm.getJobnum(), "");
+			analyzeJobDetails(db, jm);
+		}
+	}
+
+	private static void analyzeJobDetails(Database db, JobMessage jm) throws SQLException, DatabaseException {
+		int jobs = getNumOfJobs(db, jm.getJobid());
+		if(countFinishedJobs(db, jm) > jobs)
+			JobLoggerHelper.logJobStatus(db, jm.getJobid(), JobStatus.FINISHED);
+		
+	}
+
+	private static int getNumOfJobs(Database db, String jobid) throws SQLException, DatabaseException {
+		ResultSet rs = null;
+		int count = 0;
+		String sql = "SELECT num_of_jobs FROM syncdb.job WHERE jobid='" + jobid + "'";
+		rs = db.prepareStatement(sql).executeQuery();
+		if (rs.next())
+			count = rs.getInt(1);
+		rs.close();
+		return count;
+	}
+
+	private static int countFinishedTasks(Database db, JobMessage jm) throws SQLException, DatabaseException{
+		ResultSet rs = null;
+		int count = 0;
+		String sql = "SELECT count(*) FROM syncdb.task WHERE jobid='" + jm.getJobid() + "' AND \"table\"='" + jm.getTable()
+				+ "' and status = '" + JobStatus.FINISHED.name() + "'";
+		rs = db.prepareStatement(sql).executeQuery();
+		if (rs.next())
+			count = rs.getInt(1);
+		rs.close();
+		return count;
+	}
+	
+	private static int countFinishedJobs(Database db, JobMessage jm) throws SQLException, DatabaseException{
+		ResultSet rs = null;
+		int count = 0;
+		String sql = "SELECT count(*) FROM syncdb.job_detail WHERE jobid='" + jm.getJobid() + "' and status = '" + JobStatus.FINISHED.name() + "'";
+		rs = db.prepareStatement(sql).executeQuery();
+		if (rs.next())
+			count = rs.getInt(1);
+		rs.close();
+		return count;
 	}
 
 }

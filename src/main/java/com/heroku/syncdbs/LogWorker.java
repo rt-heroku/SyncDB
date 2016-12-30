@@ -3,6 +3,7 @@ package com.heroku.syncdbs;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import com.heroku.syncdbs.enums.JobStatus;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class LogWorker {
@@ -33,7 +34,10 @@ public class LogWorker {
 					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getJobnum(), jm.getTable(), jm.getStatus());
 
 					logQ.ack(delivery);
-//verify if the job is the last and all the others have finished........ then update jobdetail with details and job with status.......
+					
+					if (jm.getStatus() == JobStatus.FINISHED)
+						JobLoggerHelper.analyzeJobTask(syncDB.getSource(), jm);
+					
 					logEndMessage(t1, jm);
 					
 				}
@@ -43,6 +47,7 @@ public class LogWorker {
 			throw e;
 		}
 	}
+
 	protected static String getCurrentTime() {
 		Calendar cal = Calendar.getInstance();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
