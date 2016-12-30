@@ -46,7 +46,7 @@ public class QWorker {
 					logEndMessage(t1, jm);
 					
 					jm.setStatus(JobStatus.FINISHED);
-					logQ.sendMessage(jm);
+//					logQ.sendMessage(jm);
 				}
 			}
 		} catch (Exception e) {
