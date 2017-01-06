@@ -306,7 +306,6 @@ public class DataMover {
 					JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table, rows);
 				}
 				if ((rows % 100000) == 0){
-					//maybe log every x amount of rows ... 10k? 1k?
 					System.out.println("TABLE [" + table + "] Rows -- " + rows);
 				}
 				statementTrg.close();

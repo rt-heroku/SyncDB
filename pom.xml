@@ -48,11 +48,13 @@
 				<configuration>
 					<assembleDirectory>target</assembleDirectory>
 					<programs>
-						<program>
+<!--
+ 						<program>
 							<mainClass>com.heroku.syncdbs.SyncDB</mainClass>
 							<name>main</name>
 						</program>
-						<program>
+ -->
+ 						<program>
 							<mainClass>com.heroku.syncdbs.ScheduleJob</mainClass>
 							<name>schedule</name>
 						</program>
@@ -68,11 +70,13 @@
 							<mainClass>com.heroku.syncdbs.RunJob</mainClass>
 							<name>run</name>
 						</program>
-						<program>
-							<mainClass>com.heroku.syncdbs.Dummy</mainClass>
+<!--
+ 						<program>
+							<mainClass>com.heroku.syncdbs.DummyWorker</mainClass>
 							<name>dummy</name>
 						</program>
-					</programs>
+ -->
+ 					</programs>
 				</configuration>
 				<executions>
 					<execution>
