@@ -2,39 +2,62 @@ DROP SCHEMA syncdb CASCADE ;
 
 CREATE SCHEMA syncdb;
 
-CREATE TABLE syncdb.jobs
+------------------------------------------------------------------
+--  TABLE job
+------------------------------------------------------------------
+
+CREATE TABLE syncdb.job
 (
-   id             SERIAL,
-   job_start      TIMESTAMP (5) WITHOUT TIME ZONE,
-   job_end        timestamp,
-   status         VARCHAR (20) NOT NULL,
-   num_of_tasks   INTEGER,
-   chunk_size     INTEGER,
-   db_from        VARCHAR (20) NOT NULL,
-   db_to          VARCHAR (20) NOT NULL,
-   next_job       timestamp,
-   type           VARCHAR (20),
-   "user"         VARCHAR (20) NOT NULL,
+   id            SERIAL,
+   job_start     timestamp (5) WITH TIME ZONE,
+   job_end       timestamp (6) WITH TIME ZONE,
+   status        CHARACTER VARYING (20),
+   num_of_jobs   integer,
+   chunk_size    integer,
+   db_from       CHARACTER VARYING (50),
+   db_to         CHARACTER VARYING (50),
+   next_job      timestamp (6) WITH TIME ZONE,
+   type          CHARACTER VARYING (20),
+   "user"        CHARACTER VARYING (50),
+   jobid         CHARACTER VARYING (50),
+   status_date   timestamp (5) WITH TIME ZONE,
    PRIMARY KEY (id)
 );
 
+
+------------------------------------------------------------------
+--  TABLE job_detail
+------------------------------------------------------------------
+
 CREATE TABLE syncdb.job_detail
 (
-   id           SERIAL,
-   job_id       INTEGER NOT NULL,
-   event_date   timestamp NOT NULL,
-   status       VARCHAR (20) NOT NULL,
-   comment      VARCHAR (512),
+   id             SERIAL,
+   jobid          CHARACTER VARYING (50),
+   status_date    timestamp (6) WITH TIME ZONE,
+   status         CHARACTER VARYING (20),
+   comment        CHARACTER VARYING (4096),
+   "table"        CHARACTER VARYING (20),
+   num_of_tasks   INTEGER DEFAULT 0,
+   maxid          INTEGER DEFAULT 0,
+   job_num        INTEGER DEFAULT 0,
    PRIMARY KEY (id)
 );
+
+
+------------------------------------------------------------------
+--  TABLE task
+------------------------------------------------------------------
 
 CREATE TABLE syncdb.task
 (
    id             SERIAL,
-   jobid          INTEGER NOT NULL,
-   "table"        VARCHAR (50) NOT NULL,
-   tasknum        INTEGER NOT NULL,
-   index_loaded   INTEGER NOT NULL,
+   jobid          CHARACTER VARYING (50),
+   "table"        CHARACTER VARYING (50),
+   tasknum        integer,
+   index_loaded   integer,
+   status         CHARACTER VARYING (20),
+   status_date    timestamp (5) WITH TIME ZONE,
    PRIMARY KEY (id)
 );
+
 
