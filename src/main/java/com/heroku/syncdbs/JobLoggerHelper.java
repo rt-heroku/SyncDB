@@ -221,7 +221,7 @@ public class JobLoggerHelper {
 
 	}
 	public static void analyzeJobTask(Database db, JobMessage jm) throws SQLException, DatabaseException {
-		int jobs = jm.getTotalJobs();
+		int jobs = jm.getTotalTasks();
 		int count = countFinishedTasks(db, jm);
 
 		if (count == jobs){

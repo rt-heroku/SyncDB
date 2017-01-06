@@ -16,7 +16,7 @@ public class JobMessage {
 	private Integer offset;
 	private Integer chunk;
 	private Integer jobnum;
-	private Integer totalJobs;
+	private Integer totalTasks;
 	private Boolean last;
 	private JobStatus status;
 	private Integer tasknum;
@@ -51,7 +51,7 @@ public class JobMessage {
 		this.offset = offset;
 		this.chunk = chunk;
 		this.jobnum = jobnum;
-		this.totalJobs = totalJobs;
+		this.totalTasks = totalJobs;
 		this.last = last;
 		this.status = JobStatus.CREATED;
 		this.tasknum = tasknum;
@@ -70,7 +70,7 @@ public class JobMessage {
 		this.offset = new Integer(jobj.get("offset").toString());
 		this.chunk = new Integer(jobj.get("chunk").toString());
 		this.jobnum = new Integer(jobj.get("jobnum").toString());
-		this.totalJobs = new Integer(jobj.get("totaljobs").toString());
+		this.totalTasks = new Integer(jobj.get("totaljobs").toString());
 		this.maxid = new Integer(jobj.get("maxid").toString());
 		this.status = JobStatus.valueOf(jobj.get("status").toString());
 		this.tasknum = new Integer(jobj.get("tasknum").toString());
@@ -86,7 +86,7 @@ public class JobMessage {
 		obj.put("chunk", getChunk());
 		obj.put("jobnum", getJobnum());
 		obj.put("last", getLast());
-		obj.put("totaljobs", getTotalJobs());
+		obj.put("totaljobs", getTotalTasks());
 		obj.put("status", getStatus().name());
 		obj.put("tasknum", getTasknum());
 		return obj;
@@ -104,7 +104,7 @@ public class JobMessage {
 		jobj.put("chunk", getChunk());
 		jobj.put("jobnum", getJobnum());
 		jobj.put("last", getLast());
-		jobj.put("totaljobs", getTotalJobs());
+		jobj.put("totaljobs", getTotalTasks());
 		jobj.put("status", this.status.name());
 		jobj.put("tasknum", getTasknum());
 		return jobj;
@@ -150,11 +150,11 @@ public class JobMessage {
 	public void setJobnum(Integer jobnum) {
 		this.jobnum = jobnum;
 	}
-	public Integer getTotalJobs() {
-		return totalJobs;
+	public Integer getTotalTasks() {
+		return totalTasks;
 	}
-	public void setTotalJobs(Integer totalJobs) {
-		this.totalJobs = totalJobs;
+	public void setTotalTasks(Integer totalTasks) {
+		this.totalTasks = totalTasks;
 	}
 	public Boolean getLast() {
 		return last;

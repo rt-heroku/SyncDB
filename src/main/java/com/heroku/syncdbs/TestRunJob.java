@@ -72,7 +72,7 @@ public class TestRunJob {
 				// Sending tasks
 				for (JobMessage o : tasks){
 					//Adds number of total jobs before sending
-					o.setTotalJobs(jobnum);
+					o.setTotalTasks(jobnum);
 
 					JobLoggerHelper.logInitialTask(sourceDb, o);
 

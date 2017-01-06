@@ -15,67 +15,49 @@ public class RunJob {
 	private static QueueManager workerQ = new QueueManager();
 
 	public static void main(String[] args) {
+		try {
+			RunJob rj = new RunJob();
+			rj.runJob(JobType.MANUAL_CLI, JOB_USER);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void runJob(JobType jt, String user) throws Exception{
 		SyncDB syncDB = new SyncDB();
 		try {
+			String jobid = UUID.randomUUID().toString();
+			int chunk = getChunkSize(100000);
+			int jobnum = 0;
 
 			workerQ.connect(System.getenv(QWorker.WORKER_QUEUE_NAME));
 
-			String jobid = UUID.randomUUID().toString();
 			syncDB.connectBothDBs();
-			
-			Map<String, Integer> tables = syncDB.getTablesToMoveFromSourceAndGetTheMaxId();
-			int chunk = getChunkSize(100000);
 
 			Database sourceDb = syncDB.getSource();
+			Map<String, Integer> tables = syncDB.getTablesToMoveFromSourceAndGetTheMaxId();
 			
-			int jobnum = 0;
-			JobLoggerHelper.logJob(sourceDb, jobid, JobType.MANUAL_CLI, JOB_USER, JobStatus.CREATED, tables.size(), chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
+			JobLoggerHelper.logJob(sourceDb, jobid, jt, user, JobStatus.CREATED, tables.size(), chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
 			
 			for (String table : tables.keySet()) {
-				List<JobMessage> tasks = new ArrayList<JobMessage>();
 				int maxid = tables.get(table).intValue();
-				int tasknum = 0;
-				int jobChunk = maxid;
-				int offset = 0;
-
 				jobnum++;
 
 				syncDB.dropAndRecreateTableInTargetIfExists(table, maxid);
-				
-				//Analyzes jobs
-				while (jobChunk > 0) {
-					JobMessage jm = new JobMessage();
 
-					jobChunk = jobChunk - chunk;
-					tasknum++;
+				List<JobMessage> tasks = new ArrayList<JobMessage>();
 
-					jm.setJobid(jobid);
-					jm.setTable(table);
-					jm.setMaxid(maxid);
-					jm.setOffset(offset);
-					jm.setChunk(chunk);
-					jm.setTasknum(tasknum);
-					jm.setJobnum(jobnum);
-					
-					offset = offset + chunk;
+				int numOfTasks = analyzeJob(jobid, chunk, jobnum, table, maxid, tasks);
 
-					if  (jobChunk <= 0)
-						jm.setLast(true);
-					else
-						jm.setLast(false);
-						
-					tasks.add(jm);
-				}
-
-				JobLoggerHelper.logJobDetail(sourceDb, jobid, table, jobnum, tasknum, maxid, JobStatus.CREATED, "");
+				JobLoggerHelper.logJobDetail(sourceDb, jobid, table, jobnum, numOfTasks, maxid, JobStatus.CREATED, "");
 
 				for (JobMessage o : tasks){
-					o.setTotalJobs(tasknum);
+					o.setTotalTasks(numOfTasks);
 
 					workerQ.sendMessage(o);
 					
 					JobLoggerHelper.logInitialTask(sourceDb, o);					
-					logPublishingJob(tasknum, o);
+					logPublishingJob(numOfTasks, o);
 					
 				}
 
@@ -86,18 +68,49 @@ public class RunJob {
 			workerQ.close();
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
-			e.printStackTrace();
+			throw e;
 		} finally {
 			try {
 				syncDB.closeBothConnections();
 			} catch (Exception e) {
-				e.printStackTrace();
+				throw e;
 			}
 		}
 	}
 
+	private int analyzeJob(String jobid, int chunk, int jobnum, String table, int maxid, List<JobMessage> tasks) {
+		int tasknum = 0;
+		int jobChunk = maxid;
+		int offset = 0;
+		
+		while (jobChunk > 0) {
+			JobMessage jm = new JobMessage();
+
+			jobChunk = jobChunk - chunk;
+			tasknum++;
+
+			jm.setJobid(jobid);
+			jm.setTable(table);
+			jm.setMaxid(maxid);
+			jm.setOffset(offset);
+			jm.setChunk(chunk);
+			jm.setTasknum(tasknum);
+			jm.setJobnum(jobnum);
+			
+			offset = offset + chunk;
+
+			if  (jobChunk <= 0)
+				jm.setLast(true);
+			else
+				jm.setLast(false);
+				
+			tasks.add(jm);
+		}
+		return tasknum;
+	}
+
 	private static void logPublishingJob(int jobnum, JobMessage o) {
-		System.out.println("MANUALLY Publishing job number[" + o.getJobnum() + "] of " + jobnum + " jobs for TABLE[" + o.getTable()
+		System.out.println("MANUALLY Publishing task number[" + o.getTasknum() + "] of " + jobnum + " tasks for TABLE[" + o.getTable()
 				+ "] with total " + o.getMaxid() + " rows - OFFSET: " + o.getOffset() + " - CHUNK: " + o.getChunk());
 	}
 

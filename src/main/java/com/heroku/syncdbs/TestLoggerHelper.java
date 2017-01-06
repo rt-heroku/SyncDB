@@ -71,7 +71,7 @@ public class TestLoggerHelper {
 			JobLoggerHelper.logJobStatus(sourceDb, jobid, JobStatus.ANALYZED);
 			//Sending tasks
 			for (JobMessage o : tasks){
-				o.setTotalJobs(jobnum);
+				o.setTotalTasks(jobnum);
 
 				JobLoggerHelper.logInitialTask(sourceDb, o);
 				

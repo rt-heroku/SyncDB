@@ -5,10 +5,7 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.json.simple.JSONObject;
 import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobDetail;
@@ -18,14 +15,11 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.MessageProperties;
+import com.heroku.syncdbs.enums.JobType;
 
 public class ScheduleJob {
 
-	final static ConnectionFactory factory = new ConnectionFactory();
+	private static final String JOB_USER = "SCHEDULER";
 
 	public static void main(String[] args) {
 		try {
@@ -44,7 +38,6 @@ public class ScheduleJob {
 			System.out.println("Schedule to run: " + schedule);
 			System.out.println(trigger.getExpressionSummary());
 
-			factory.setUri(System.getenv("CLOUDAMQP_URL"));
 			scheduler.scheduleJob(jobDetail, trigger);
 
 		} catch (SchedulerException se) {
@@ -57,65 +50,15 @@ public class ScheduleJob {
 
 	public static class CopyDatabaseJob implements Job {
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 			try {
+				RunJob rj = new RunJob();
 				logJob(jobExecutionContext);
-				ConnectionFactory factory = new ConnectionFactory();
-				factory.setUri(System.getenv("RABBITMQ_BIGWIG_URL"));
-
-				Connection connection = factory.newConnection();
-				Channel channel = connection.createChannel();
-				String queueName = "" + System.getenv("QUEUE_NAME");
-				Map<String, Object> params = new HashMap<String, Object>();
-				params.put("x-ha-policy", "all");
-				channel.queueDeclare(queueName, true, false, false, params);
-
-				SyncDB syncDB = new SyncDB();
-				syncDB.connectBothDBs();
-				Map<String, Integer> tables = syncDB.getTablesToMoveFromSourceAndGetTheMaxId();
-				int chunk = getChunkSize(100000);
-
-				for (String table : tables.keySet()) {
-					int count = tables.get(table);
-					JSONObject obj = new JSONObject();
-
-					int job = 0;
-					int jobChunk = count;
-					int offset = 0;
-
-					syncDB.dropAndRecreateTableInTargetIfExists(table, count);
-
-					while (jobChunk > 0) {
-
-						jobChunk = jobChunk - chunk;
-						job++;
-
-						obj.put("table", table);
-						obj.put("count", count);
-						obj.put("offset", offset);
-						obj.put("limit", chunk);
-						obj.put("job", job);
-
-						channel.basicPublish("", queueName, MessageProperties.PERSISTENT_TEXT_PLAIN,
-								obj.toJSONString().getBytes("UTF-8"));
-
-						System.out.println("MANUALLY Publishing job number[" + job + "] for TABLE[" + table
-								+ "] with total " + count + " rows - OFFSET: " + offset + " - LIMIT: " + chunk);
-
-						offset = offset + chunk;
-					}
-				}
-
-				syncDB.closeBothConnections();
-				connection.close();
-
+				rj.runJob(JobType.SCHEDULED, JOB_USER);
 			} catch (Exception e) {
-				System.err.println(e.getMessage());
 				e.printStackTrace();
 			}
-
 		}
 
 		private void logJob(JobExecutionContext jobExecutionContext) {
@@ -124,19 +67,6 @@ public class ScheduleJob {
 			System.out.println("Next Job will run on: " + sdf.format(jobExecutionContext.getNextFireTime()));
 		}
 
-	}
-	private static int getChunkSize(int i) {
-		int r = 0;
-		try {
-			String cs = System.getenv("CHUNK_SIZE");
-			if (cs == null || cs.equals(""))
-				return i;
-			r = new Integer(cs).intValue();
-		} catch (Exception e) {
-			return i;
-		}
-
-		return r;
 	}
 
 }
