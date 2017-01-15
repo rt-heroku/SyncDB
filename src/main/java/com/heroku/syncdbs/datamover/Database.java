@@ -315,7 +315,7 @@ public abstract class Database {
 
 		return result;
 	}
-	public Collection<TableInfo> getListTablesFromInventory() throws DatabaseException{
+	public Collection<TableInfo> getListTablesFromInventory(boolean analyzed) throws DatabaseException{
 		List<TableInfo> lti = new ArrayList<TableInfo>();
 		String sql;
 		PreparedStatement statementSrc = null;
@@ -336,6 +336,8 @@ public abstract class Database {
 				t.setAnalyze(rs.getBoolean(6));
 				t.setMaxid(rs.getInt(7));
 				lti.add(t);
+				if (!analyzed)
+					System.out.println("Found [" + t.getType() + "] - NAMED = " + t.getFullName());
 			}
 			
 		} catch (Exception e) {

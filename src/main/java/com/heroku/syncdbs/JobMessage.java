@@ -21,7 +21,7 @@ public class JobMessage {
 	}
 	
 	public JobMessage(String jobid, TableInfo table, Integer maxid, Integer offset, Integer chunk, Integer jobnum,
-			Integer totalJobs, Boolean last, Integer tasknum) {
+			Integer totalTasks, Boolean last, Integer tasknum) {
 		super();
 		this.jobid = jobid;
 		this.table = table;
@@ -29,7 +29,7 @@ public class JobMessage {
 		this.offset = offset;
 		this.chunk = chunk;
 		this.jobnum = jobnum;
-		this.totalTasks = totalJobs;
+		this.totalTasks = totalTasks;
 		this.last = last;
 		this.status = JobStatus.CREATED;
 		this.tasknum = tasknum;

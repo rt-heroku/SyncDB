@@ -52,10 +52,9 @@ public class RunJob {
 				syncDB.dropAndRecreateTableInTargetIfExists(table, maxid);
 
 				List<JobMessage> tasks = new ArrayList<JobMessage>();
-//TODO: add schema in object and send individually instead of one parameter.
 				int numOfTasks = analyzeJob(jobid, chunk, jobnum, table, maxid, tasks);
 
-				JobLoggerHelper.logJobDetail(sourceDb, jobid, table.getName(), jobnum, numOfTasks, maxid, JobStatus.CREATED, "");
+				JobLoggerHelper.logJobDetail(sourceDb, jobid, table.getFullName(), jobnum, numOfTasks, maxid, JobStatus.CREATED, "");
 
 				for (JobMessage o : tasks){
 					o.setTotalTasks(numOfTasks);
@@ -63,11 +62,14 @@ public class RunJob {
 					workerQ.sendMessage(o);
 					
 					JobLoggerHelper.logInitialTask(sourceDb, o);					
-					logPublishingJob(numOfTasks, o);
+					
+					if (Settings.isDebug())
+						logPublishingJobItem(numOfTasks, o);
 					
 				}
-
-				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.SENT, jobnum, tasks.toString());
+				logPublishingJob(numOfTasks, table);
+				
+				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getFullName(), JobStatus.SENT, jobnum, tasks.toString());
 
 			}
 			JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.SENT);
@@ -115,9 +117,14 @@ public class RunJob {
 		return tasknum;
 	}
 
-	private static void logPublishingJob(int jobnum, JobMessage o) {
+	private static void logPublishingJobItem(int jobnum, JobMessage o) {
 		System.out.println("MANUALLY Publishing task number[" + o.getTasknum() + "] of " + jobnum + " tasks for TABLE[" + o.getTable()
 				+ "] with total " + o.getMaxid() + " rows - OFFSET: " + o.getOffset() + " - CHUNK: " + o.getChunk());
+	}
+
+	private static void logPublishingJob(int jobnum, TableInfo o) {
+		System.out.println("MANUALLY Publishing " + jobnum + " tasks for TABLE[" + o.getFullName()
+		+ "] with max row id = " + o.getMaxid() + " - CHUNK: " + Settings.getChunkSize());
 	}
 
 	private static int getChunkSize(int i) {

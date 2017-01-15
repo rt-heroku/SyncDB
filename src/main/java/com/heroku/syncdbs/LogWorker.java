@@ -30,7 +30,7 @@ public class LogWorker {
 					long t1 = System.currentTimeMillis();
 					JobMessage jm = logQ.parseJsonMessage(delivery.getBody());
 
-					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getTasknum(), jm.getTable().toString(), jm.getStatus());
+					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getTasknum(), jm.getTable().getFullName(), jm.getStatus());
 
 					logQ.ack(delivery);
 					

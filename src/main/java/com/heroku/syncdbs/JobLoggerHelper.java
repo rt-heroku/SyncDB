@@ -225,7 +225,7 @@ public class JobLoggerHelper {
 		int count = countFinishedTasks(db, jm);
 
 		if (count == jobs){
-			logJobDetailStatus(db, jm.getJobid(), jm.getTable().toString(), JobStatus.FINISHED, jm.getJobnum(), "");
+			logJobDetailStatus(db, jm.getJobid(), jm.getTable().getFullName(), JobStatus.FINISHED, jm.getJobnum(), "");
 			analyzeJobDetails(db, jm);
 		}
 	}

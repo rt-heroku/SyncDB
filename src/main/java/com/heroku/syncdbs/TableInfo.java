@@ -105,7 +105,8 @@ public class TableInfo {
 	}
 	
 	public String getFullName() {
-		return schema + "." + fullName;
+		fullName = schema + "." + name;
+		return fullName;
 	}
 
 	public void setFullName(String fullName){
@@ -134,6 +135,10 @@ public class TableInfo {
 
 	public void setTransfer(boolean transfer) {
 		this.transfer = transfer;
+	}
+	@Override
+	public String toString(){
+		return schema + "." + name;
 	}
 
 }

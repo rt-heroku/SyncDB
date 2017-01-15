@@ -207,7 +207,7 @@ public class SyncDB {
 	public List<TableInfo> analyzeTables(Database db, List<TableInfo> tables) throws Exception {
 		for (TableInfo t : tables){
 			System.out.print("ANALYZING "  + t.getType() + " " + t.getFullName() + " .... ");
-			db.analyzeTable(t.toString());
+			db.analyzeTable(t.getFullName());
 			updateMaxId(db, t);
 			if (t.getType().equals("VIEW"))
 				System.out.println("\tDone! - maxId = " + t.getMaxid());

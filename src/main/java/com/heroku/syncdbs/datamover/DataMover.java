@@ -155,7 +155,7 @@ public class DataMover {
 		List<TableInfo> ts = new ArrayList<TableInfo>();
 		Collection<TableInfo> list = null;
 		if (Settings.useViewInventory())
-			list = db.getListTablesFromInventory();
+			list = db.getListTablesFromInventory(analyzed);
 		else
 			list = db.listTables(schema);
 		for (TableInfo t : list) {
@@ -300,10 +300,10 @@ public class DataMover {
 					hasCommited = true;
 				}
 				if ((rows % 5000) == 0){
-					JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table.toString(), rows);
+					JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table.getFullName(), rows);
 				}
 				if ((rows % 100000) == 0){
-					System.out.println("TABLE [" + table + "] Rows -- " + rows);
+					System.out.println("TABLE [" + table.getFullName() + "] Rows -- " + rows);
 				}
 				statementTrg.close();
 			}
@@ -314,7 +314,7 @@ public class DataMover {
 			
 			if (rows > 0){
 				JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table.getFullName(), rows);
-				System.out.println("TABLE [" + table + "] Rows -- " + rows);
+				System.out.println("TABLE [" + table.getFullName() + "] Rows -- " + rows);
 			}
 		} catch (SQLException e) {
 			System.err.println("column type = " + getSqlTypeName(type));
