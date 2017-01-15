@@ -1,0 +1,19 @@
+{
+  "name": "Heroku Connect Database Mover",
+  "description": "Scheduler and Worker app that copies Heroku Connect data.",
+  "website": "https://github.com/rt-heroku/SyncDB",
+  "repository": "https://github.com/rt-heroku/SyncDB",
+  "logo": "https://cdn.worldvectorlogo.com/logos/heroku.svg",
+  "scripts": {},
+  "env": {
+    "CHUNK_SIZE": "20000",
+    "LOG_QUEUE_NAME": "copydb-logq",
+    "QUEUE_NAME": "copydb-q",
+    "SCHEDULE_CRON": "0 0/10 * * * ?",
+    "SOURCE_VAR": "HEROKU_POSTGRESQL_JDBC_URL",
+    "TARGET_VAR": "HEROKU_POSTGRESQL_YELLOW_JDBC_URL",
+    "TRANSFER_FROM_SCHEMA": "public",
+    "TRANSFER_TO_SCHEMA": "public"
+  },
+  "addons": ["heroku-postgresql", "herokuconnect"]
+}

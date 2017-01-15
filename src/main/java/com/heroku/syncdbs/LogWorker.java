@@ -7,7 +7,6 @@ import com.heroku.syncdbs.enums.JobStatus;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class LogWorker {
-	public static final String LOG_QUEUE_NAME = "LOG_QUEUE_NAME";
 	private QueueManager logQ = new QueueManager();
 
 	public LogWorker() {
@@ -22,16 +21,16 @@ public class LogWorker {
 		SyncDB syncDB = new SyncDB();
 		syncDB.connectBothDBs();
 		
-		logQ.connect(System.getenv(LOG_QUEUE_NAME));
+		logQ.connect(Settings.getLogQueueName());
 		
 		try {
 			while (true) {
 				QueueingConsumer.Delivery delivery = logQ.nextDelivery();
 				if (delivery != null) {
 					long t1 = System.currentTimeMillis();
-					JobMessage jm = new JobMessage(delivery.getBody());
+					JobMessage jm = logQ.parseJsonMessage(delivery.getBody());
 
-					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getTasknum(), jm.getTable(), jm.getStatus());
+					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getTasknum(), jm.getTable().toString(), jm.getStatus());
 
 					logQ.ack(delivery);
 					

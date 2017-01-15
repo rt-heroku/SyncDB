@@ -7,8 +7,6 @@ import com.heroku.syncdbs.enums.JobStatus;
 import com.rabbitmq.client.QueueingConsumer;
 
 public class QWorker {
-	public static final String LOG_QUEUE_NAME = "LOG_QUEUE_NAME";
-	public static final String WORKER_QUEUE_NAME = "QUEUE_NAME";
 	private QueueManager workerQ = new QueueManager();
 	private QueueManager logQ = new QueueManager();
 	
@@ -24,15 +22,15 @@ public class QWorker {
 		SyncDB syncDB = new SyncDB();
 		syncDB.connectBothDBs();
 		
-		workerQ.connect(System.getenv(WORKER_QUEUE_NAME));
-		logQ.connect(System.getenv(LOG_QUEUE_NAME));
+		workerQ.connect(Settings.getWorkerQueueName());
+		logQ.connect(Settings.getLogQueueName());
 		
 		try {
 			while (true) {
 				QueueingConsumer.Delivery delivery = workerQ.nextDelivery();
 				if (delivery != null) {
 					long t1 = System.currentTimeMillis();
-					JobMessage jm = new JobMessage(delivery.getBody());
+					JobMessage jm = workerQ.parseJsonMessage(delivery.getBody());
 
 					jm.setStatus(JobStatus.PROCESSING);
 					logQ.sendMessage(jm);
@@ -54,7 +52,6 @@ public class QWorker {
 			throw e;
 		}
 	}
-
 
 	protected void logStartMessage(JobMessage jm) {
 		String current = getCurrentTime();

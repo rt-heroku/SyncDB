@@ -2,7 +2,6 @@ package com.heroku.syncdbs;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import com.heroku.syncdbs.datamover.Database;
@@ -30,26 +29,33 @@ public class RunJob {
 			int chunk = getChunkSize(100000);
 			int jobnum = 0;
 
-			workerQ.connect(System.getenv(QWorker.WORKER_QUEUE_NAME));
+			workerQ.connect(Settings.getWorkerQueueName());
 
 			syncDB.connectBothDBs();
 
 			Database sourceDb = syncDB.getSource();
-			Map<String, Integer> tables = syncDB.getTablesToMoveFromSourceAndGetTheMaxId();
+
+			if (Settings.refreshViews())
+				syncDB.refreshMaterializedViews(sourceDb);
 			
+			List<TableInfo> tables = syncDB.getTablesToMoveFromSourceAndGetTheMaxId();
+			
+			if (Settings.analyzeBeforeProcess())
+				tables = syncDB.analyzeTables(sourceDb, tables);
+
 			JobLoggerHelper.logJob(sourceDb, jobid, jt, user, JobStatus.CREATED, tables.size(), chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
 			
-			for (String table : tables.keySet()) {
-				int maxid = tables.get(table).intValue();
+			for (TableInfo table : tables) {
+				int maxid = table.getMaxid();
 				jobnum++;
 
 				syncDB.dropAndRecreateTableInTargetIfExists(table, maxid);
 
 				List<JobMessage> tasks = new ArrayList<JobMessage>();
-
+//TODO: add schema in object and send individually instead of one parameter.
 				int numOfTasks = analyzeJob(jobid, chunk, jobnum, table, maxid, tasks);
 
-				JobLoggerHelper.logJobDetail(sourceDb, jobid, table, jobnum, numOfTasks, maxid, JobStatus.CREATED, "");
+				JobLoggerHelper.logJobDetail(sourceDb, jobid, table.getName(), jobnum, numOfTasks, maxid, JobStatus.CREATED, "");
 
 				for (JobMessage o : tasks){
 					o.setTotalTasks(numOfTasks);
@@ -61,7 +67,7 @@ public class RunJob {
 					
 				}
 
-				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table, JobStatus.SENT, jobnum, tasks.toString());
+				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.SENT, jobnum, tasks.toString());
 
 			}
 			JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.SENT);
@@ -78,7 +84,7 @@ public class RunJob {
 		}
 	}
 
-	private int analyzeJob(String jobid, int chunk, int jobnum, String table, int maxid, List<JobMessage> tasks) {
+	private int analyzeJob(String jobid, int chunk, int jobnum, TableInfo table, int maxid, List<JobMessage> tasks) {
 		int tasknum = 0;
 		int jobChunk = maxid;
 		int offset = 0;
@@ -117,7 +123,7 @@ public class RunJob {
 	private static int getChunkSize(int i) {
 		int r = 0;
 		try {
-			String cs = System.getenv("CHUNK_SIZE");
+			String cs = Settings.getChunkSize();
 			if (cs == null || cs.equals(""))
 				return i;
 			r = new Integer(cs).intValue();

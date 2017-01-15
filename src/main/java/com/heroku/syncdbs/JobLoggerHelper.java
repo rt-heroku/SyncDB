@@ -119,7 +119,7 @@ public class JobLoggerHelper {
 	}
 
 	public static void logInitialTask(Database db, JobMessage jm) {
-		logInitialTask(db, jm.getTable(), jm.getJobid(), jm.getTasknum());
+		logInitialTask(db, jm.getTable().toString(), jm.getJobid(), jm.getTasknum());
 	}
 	public static void logInitialTask(Database db, String table, String jobId, int taskNum) {
 		try {
@@ -225,7 +225,7 @@ public class JobLoggerHelper {
 		int count = countFinishedTasks(db, jm);
 
 		if (count == jobs){
-			logJobDetailStatus(db, jm.getJobid(), jm.getTable(), JobStatus.FINISHED, jm.getJobnum(), "");
+			logJobDetailStatus(db, jm.getJobid(), jm.getTable().toString(), JobStatus.FINISHED, jm.getJobnum(), "");
 			analyzeJobDetails(db, jm);
 		}
 	}

@@ -15,9 +15,20 @@
  */
 package com.heroku.syncdbs.datamover;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+
+import com.heroku.syncdbs.Settings;
+import com.heroku.syncdbs.TableInfo;
 
 /**
  * The Database class is used to provide all of the low-level
@@ -34,7 +45,6 @@ public abstract class Database {
 	 */
 	protected Connection connection;
 
-  
     /**
 	 * Abstrct method to process a database type. Sometimes database types are
 	 * not reported exactly as they need to be for proper syntax. This method
@@ -53,8 +63,7 @@ public abstract class Database {
 	
 	
 	protected boolean isDebugEnabled(){
-    	String ret = System.getenv("DEBUG") + "";
-    	return ret.equals("TRUE");
+    	return Settings.isDebug();
     }
    /**
 	 * Open a connection to the database.
@@ -143,7 +152,7 @@ public abstract class Database {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public String generateCreateTableSQLStatement(String sFrom, String sTo, String table, int maxId) throws DatabaseException {
+	public String generateCreateTableSQLStatement(String sTo, TableInfo table, int maxId) throws DatabaseException {
 		StringBuffer result = new StringBuffer();
 
 		ResultSetMetaData md = null;
@@ -155,7 +164,7 @@ public abstract class Database {
 				
 				//Only 1 row to get the definition
 				sql.append("SELECT * FROM ");
-				sql.append(sFrom + "." + table.toLowerCase());
+				sql.append(table.getFullName());
 				
 				if (maxId > 0)
 					sql.append(" WHERE id = " + maxId);
@@ -171,7 +180,7 @@ public abstract class Database {
 				md = rs.getMetaData();
 	
 				result.append("CREATE TABLE ");
-				result.append(sTo + "." + table);
+				result.append(sTo + "." + table.getName());
 				result.append(" ( ");
 	
 				for (int i = 1; i <= md.getColumnCount(); i++) {
@@ -193,7 +202,7 @@ public abstract class Database {
 				}
 	
 				DatabaseMetaData dbm = connection.getMetaData();
-				ResultSet primary = dbm.getPrimaryKeys(null, null, table);
+				ResultSet primary = dbm.getPrimaryKeys(null, table.getSchema(), table.getName());
 				boolean first = true;
 				while (primary.next()) {
 					if (first) {
@@ -246,6 +255,8 @@ public abstract class Database {
 	public void execute(String sql) throws DatabaseException {
 		Statement stmt = null;
 		try {
+			if (isDebugEnabled())
+				System.out.println(sql);
 			stmt = connection.createStatement();
 			stmt.execute(sql);
 			stmt.close();
@@ -270,24 +281,24 @@ public abstract class Database {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public Collection<String> listTables(String schema) throws DatabaseException {
-		Collection<String> result = new ArrayList<String>();
+	public Collection<TableInfo> listTables(String schema) throws DatabaseException {
+		Collection<TableInfo> result = new ArrayList<TableInfo>();
 		ResultSet rs = null;
 
 		try {
 			DatabaseMetaData dbm;
 			dbm = connection.getMetaData();
 
-			String types[] = { "VIEW" };
+			String types[] = { "VIEW", "MATERIALIZED VIEW", "TABLE" };
 			rs = dbm.getTables(null, schema, null, types);
 			while (rs.next()) {
-				String str = rs.getString("TABLE_NAME");
-				
+				String str = "\"" + rs.getString("TABLE_NAME") + "\"";
 				if (!str.startsWith("pg_")){
 					String type = rs.getString("TABLE_TYPE");
+					TableInfo t = new TableInfo(schema,str,type);
 					//if (isDebugEnabled())
-						System.out.println("Found [" + type + "] - NAMED = " + str);
-					result.add(str);
+						System.out.println("Found [" + type + "] - NAMED = " + schema + "." + str);
+					result.add(t);
 				}
 			}
 			rs.close();
@@ -303,6 +314,42 @@ public abstract class Database {
 		}
 
 		return result;
+	}
+	public Collection<TableInfo> getListTablesFromInventory() throws DatabaseException{
+		List<TableInfo> lti = new ArrayList<TableInfo>();
+		String sql;
+		PreparedStatement statementSrc = null;
+		ResultSet rs = null;
+		try {
+
+			sql = "SELECT \"schema\", object_name, \"type\", \"number_of_rows\", \"refresh\", \"analyze\", \"maxid\" FROM syncdb.objects_to_transfer WHERE transfer = true";
+			statementSrc = connection.prepareStatement(sql);
+			rs = statementSrc.executeQuery();
+
+			while (rs.next()){
+				TableInfo t = new TableInfo();
+				t.setSchema(rs.getString(1));
+				t.setName("\"" + rs.getString(2) + "\"");
+				t.setType(rs.getString(3));
+				t.setCount(rs.getInt(4));
+				t.setRefresh(rs.getBoolean(5));
+				t.setAnalyze(rs.getBoolean(6));
+				t.setMaxid(rs.getInt(7));
+				lti.add(t);
+			}
+			
+		} catch (Exception e) {
+			System.out.println("Error while retrieving items to sync - " + e.getMessage());
+			throw new DatabaseException(e);
+		} finally {
+			try{
+				rs.close();
+				statementSrc.close();
+			} catch (Exception e){
+				
+			}
+		}
+		return lti;
 	}
 
 	/**
@@ -323,7 +370,7 @@ public abstract class Database {
 			dbm = connection.getMetaData();
 			
 			String types[] = { "TABLE" };
-			rs = dbm.getTables(null, schema, table.toLowerCase(), types);
+			rs = dbm.getTables(null, schema, table.replace("\"", ""), types);
 			result = rs.next();
 			rs.close();
 		} catch (SQLException e) {
@@ -356,7 +403,7 @@ public abstract class Database {
 		try {
 			DatabaseMetaData dbm;
 			dbm = connection.getMetaData();
-			rs = dbm.getColumns(null, schema, table.toLowerCase(), null);
+			rs = dbm.getColumns(null, schema, table.replace("\"", ""), null);
 			while (rs.next()) {
 				result.add(rs.getString("COLUMN_NAME"));
 			}
@@ -412,5 +459,16 @@ public abstract class Database {
 	public Connection getConnection() {
 		return connection;
 	}
+
+	public void refreshMaterializedView(String schema, String v) throws DatabaseException {
+		String sql = "REFRESH MATERIALIZED VIEW " + schema + ".\"" + v + "\"";
+		execute(sql);
+	}
+
+	public void analyzeTable(String table) throws DatabaseException{
+		String sql = "ANALYZE " + table;
+		execute(sql);
+	}
+
 
 }

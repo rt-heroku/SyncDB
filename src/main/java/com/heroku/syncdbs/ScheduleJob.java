@@ -29,7 +29,7 @@ public class ScheduleJob {
 
 			JobDetail jobDetail = newJob(CopyDatabaseJob.class).build();
 
-			String schedule = "" + System.getenv("SCHEDULE_CRON");
+			String schedule = "" + Settings.getSchedulerCron();
 			String description = "CopyDatabase Job scheduled to run [" + schedule + "]";
 
 			CronTrigger trigger = newTrigger().withIdentity("trigger1", "group1").startNow()
@@ -50,7 +50,7 @@ public class ScheduleJob {
 
 	public static class CopyDatabaseJob implements Job {
 
-		@Override
+		//@Override
 		public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 			try {
 				RunJob rj = new RunJob();

@@ -2,8 +2,10 @@ package com.heroku.syncdbs;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Map;
+import java.util.Collection;
+import java.util.List;
 
 import com.heroku.syncdbs.datamover.DataMover;
 import com.heroku.syncdbs.datamover.Database;
@@ -12,16 +14,13 @@ import com.heroku.syncdbs.datamover.PostgreSQL;
 
 public class SyncDB {
 
-	public static String SOURCE_VAR = "SOURCE_VAR";
-	public static String TARGET_VAR = "TARGET_VAR";
-
 	private DataMover mover = new DataMover();
 	private Database source = new PostgreSQL();
 	private Database target = new PostgreSQL();
-
+	private boolean analyzed = false;
+	
 	protected boolean isDebugEnabled() {
-		String ret = System.getenv("DEBUG") + "";
-		return ret.equals("TRUE");
+		return Settings.isDebug();
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -38,8 +37,6 @@ public class SyncDB {
 			System.out.println("Starting data mover ... " + getCurrentTime());
 
 			connectUsingHerokuVars(getSource(), getTarget());
-			
-//			connectUsingJdbcUrls(source, target);
 			
 			getMover().setSource(getSource());
 			getMover().setTarget(getTarget());
@@ -72,7 +69,8 @@ public class SyncDB {
 			getMover().setJobid(jm.getJobid());
 			getMover().setTaskNum(jm.getTasknum());
 			
-			getMover().copyChunkTable(getFromSchema(), getToSchema(), jm.getTable(), jm.getOffset(), jm.getChunk());
+			getMover().copyChunkTable(getToSchema(), jm.getTable(), jm.getOffset(), jm.getChunk());
+			
 			return getMover().getRowsLoaded();
 			
 		} catch (Exception e) {
@@ -80,10 +78,10 @@ public class SyncDB {
 			throw e;
 		}
 	}
-	protected void copyTable(String fromSchema, String toSchema, String table) throws Exception {
+	protected void copyTable(String fromSchema, String toSchema, TableInfo table) throws Exception {
 		try {
 			long t1 = System.currentTimeMillis();
-			System.out.println("Starting data mover for table [" + table + "] ... " + getCurrentTime());
+			System.out.println("Starting data mover for table [" + table.getFullName() + "] ... " + getCurrentTime());
 
 			connectBothDBs();			
 
@@ -92,12 +90,12 @@ public class SyncDB {
 				getMover().printGeneralMetadata(getTarget());
 			}
 
-			getMover().exportDatabase(fromSchema, toSchema, table);
+			getMover().exportTable(fromSchema, toSchema, table);
 
 			getSource().close();
 			getTarget().close();
 
-			System.out.println("Data mover ENDED for table [" + table + "] !" + getCurrentTime());
+			System.out.println("Data mover ENDED for table [" + table.getFullName() + "] !" + getCurrentTime());
 			long t2 = System.currentTimeMillis();
 			System.out.println(" Took " + (t2 - t1) / 1000 + " seconds to run the job!");
 
@@ -106,11 +104,33 @@ public class SyncDB {
 			throw e;
 		}
 	}
-	protected void dropAndRecreateTableInTargetIfExists(String table, int maxId) throws Exception {
+	public void refreshMaterializedViews(Database db) throws Exception {
 		try {
-			String fromSchema = getFromSchema();
+			String views = Settings.getViewsToRefresh();
+			String schema = Settings.getMvSchema();
+
+			validateConnection("target");
+			validateConnection("source");
+			
+			Collection<String> list = Arrays.asList(views.split("\\;"));
+			
+			for (String v : list){
+				String view = schema + ".\"" + v + "\"";
+				System.out.print("Refreshing MATERIALIZED VIEW " + view + " ... ");
+				db.refreshMaterializedView(schema, v);
+				db.analyzeTable(view);
+				System.out.println("Done!");
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}		
+	}
+	protected void dropAndRecreateTableInTargetIfExists(TableInfo ti, int maxId) throws Exception {
+		try {
 			String toSchema = getToSchema();
-			getMover().dropTableIfExistsAndCreateTable(fromSchema, toSchema, table, maxId);
+			getMover().dropTableIfExistsAndCreateTable(toSchema, ti, maxId);
 		} catch (DatabaseException e) {
 			throw new Exception(e);
 		}
@@ -118,9 +138,9 @@ public class SyncDB {
 
 	protected void connectUsingJdbcUrls(Database source, Database target) throws SQLException {
 		source.connectString(
-				"jdbc:postgresql://ec2-54-227-234-59.compute-1.amazonaws.com:5432/d3ptaja7fk91s5?user=u8ohh8b179758f&password=p2ch4dj5jkgi216ekj9cedm9lia&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+				"jdbc:postgresql://ec2-54-221-215-139.compute-1.amazonaws.com:5432/d6ln3avkp9rvkh?user=uusopq120p23j&password=pc53e4c364189d3aed8acf921cf769f7d67b8a6d53bb2c20f4242c9200e156f6f&sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 		target.connectString(
-				"jdbc:postgresql://ec2-34-192-225-110.compute-1.amazonaws.com:5432/ddtj1lkfhi8u5p?user=u2cniv4vh0r7f8&password=pbqi7smqlclupn7k8agcccmo17h&sslmode=require&ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory");
+				"jdbc:postgresql://ec2-107-22-167-159.compute-1.amazonaws.com:5432/d7snsc52h2bm4d?user=u6tp1vvlvd0u1m&password=pcf71fa23ae12377a23522db681191c7620d65a746135e0167aac0ea9976b1cfb&sslmode=require&sslfactory=org.postgresql.ssl.NonValidatingFactory");
 	}
 
 	protected void connectUsingHerokuVars(Database source, Database target) throws SQLException {
@@ -177,26 +197,56 @@ public class SyncDB {
 	}
 	
 	public String getFromSchema(){
-		String schema = "public";
-		if (System.getenv("TRANSFER_FROM_SCHEMA") != null)
-			schema = System.getenv("TRANSFER_FROM_SCHEMA");
-		return schema;
+		return Settings.getEnvVar(Settings.getTransferFromSchema(), "public");
 	}
 	
 	public String getToSchema(){
-		String schema = "public";
-		if (System.getenv("TRANSFER_TO_SCHEMA") != null)
-			schema = System.getenv("TRANSFER_TO_SCHEMA");
-		return schema;
+		return Settings.getEnvVar(Settings.getTransferToSchema(), "public");
 	}
 
-	protected Map<String, Integer> getTablesToMoveFromSourceAndGetTheMaxId() throws Exception {
+	public List<TableInfo> analyzeTables(Database db, List<TableInfo> tables) throws Exception {
+		for (TableInfo t : tables){
+			System.out.print("ANALYZING "  + t.getType() + " " + t.getFullName() + " .... ");
+			db.analyzeTable(t.toString());
+			updateMaxId(db, t);
+			if (t.getType().equals("VIEW"))
+				System.out.println("\tDone! - maxId = " + t.getMaxid());
+			else
+				System.out.println("\tDone! - Rows: " + t.getCount() + ",\tmaxId = " + t.getMaxid());
+		}
+		
+		String sql = "UPDATE syncdb.objects_to_transfer o " + 
+					"   SET number_of_rows = a.number_of_rows " +
+					"  FROM syncdb.all_transferable_objects a " +
+					" WHERE     o.schema = a.schema " +
+					"       AND o.object_name = a.object_name" + 
+					"       AND o.type = a.type";
+
+		db.execute(sql);
+		
+		System.out.println("ALL OBJECTS ANALYZED!");
+		
+		analyzed = true;
+		
+		return getTablesToMoveFromSourceAndGetTheMaxId();
+	}
+
+	private void updateMaxId(Database db, TableInfo t) throws Exception{
+		String sql = "UPDATE syncdb.objects_to_transfer " + 
+					 "   SET maxid = " + t.getMaxid() + 
+					 " WHERE schema = '" + t.getSchema() + "'" +
+					 "   AND object_name = " + t.getName().replace("\"", "'");
+		
+		db.execute(sql);
+	}
+
+	protected List<TableInfo> getTablesToMoveFromSourceAndGetTheMaxId() throws Exception {
 		try{
 			validateConnection("source");
 		}catch (SQLException e) {
 			throw e;
 		}
-		return mover.getListOfTableNamesAndMaxId(getSource(), getFromSchema());
+		return mover.getListOfTableNamesAndMaxId(getSource(), getFromSchema(), analyzed);
 	}
 	
 	private void validateConnection(String db) throws SQLException{
@@ -217,8 +267,7 @@ public class SyncDB {
 	}
 
 	public String getTargetDatabase() {
-		String target_var = System.getenv(TARGET_VAR);
-		return target_var;
+		return Settings.getTargetVar();
 	}
 
 	protected void connectToSource(Database source) throws SQLException {
@@ -228,8 +277,7 @@ public class SyncDB {
 	}
 
 	public String getSourceDatabase() {
-		String source_var = System.getenv(SOURCE_VAR);
-		return source_var;
+		return Settings.getSourceVar();
 	}
 
 	protected static String getCurrentTime() {

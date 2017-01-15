@@ -37,6 +37,11 @@
 			<artifactId>json-simple</artifactId>
 			<version>1.1.1</version>
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.5.3</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -48,13 +53,9 @@
 				<configuration>
 					<assembleDirectory>target</assembleDirectory>
 					<programs>
-<!--
- 						<program>
-							<mainClass>com.heroku.syncdbs.SyncDB</mainClass>
-							<name>main</name>
-						</program>
- -->
- 						<program>
+						<!-- <program> <mainClass>com.heroku.syncdbs.SyncDB</mainClass> <name>main</name> 
+							</program> -->
+						<program>
 							<mainClass>com.heroku.syncdbs.ScheduleJob</mainClass>
 							<name>schedule</name>
 						</program>
@@ -70,13 +71,13 @@
 							<mainClass>com.heroku.syncdbs.RunJob</mainClass>
 							<name>run</name>
 						</program>
-<!--
- 						<program>
-							<mainClass>com.heroku.syncdbs.DummyWorker</mainClass>
-							<name>dummy</name>
+						<program>
+							<mainClass>com.heroku.syncdbs.TestDate</mainClass>
+							<name>td</name>
 						</program>
- -->
- 					</programs>
+						<!-- <program> <mainClass>com.heroku.syncdbs.DummyWorker</mainClass> 
+							<name>dummy</name> </program> -->
+					</programs>
 				</configuration>
 				<executions>
 					<execution>

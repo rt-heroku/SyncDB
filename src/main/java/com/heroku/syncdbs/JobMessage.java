@@ -1,17 +1,12 @@
 package com.heroku.syncdbs;
 
-import java.io.UnsupportedEncodingException;
-
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heroku.syncdbs.enums.JobStatus;
 
 public class JobMessage {
 
 	private String jobid;
-	private String table;
+	private TableInfo table;
 	private Integer maxid;
 	private Integer offset;
 	private Integer chunk;
@@ -21,28 +16,11 @@ public class JobMessage {
 	private JobStatus status;
 	private Integer tasknum;
 	
-	private JSONParser parser = null;
-	private JSONObject jobj = null;
-	
 	public JobMessage(){
 		super();
 	}
 	
-	public JobMessage(byte[] b) throws UnsupportedEncodingException, ParseException{
-		String msg = new String(b, "UTF-8");
-		setJsonAndParseMessage(msg);
-	}
-	
-	public JobMessage(String json) throws ParseException{
-		setJsonAndParseMessage(json);
-	}
-
-	public JobMessage(JSONObject jobj){
-		this.jobj = jobj;
-		setJobMessage(jobj);
-	}
-	
-	public JobMessage(String jobid, String table, Integer maxid, Integer offset, Integer chunk, Integer jobnum,
+	public JobMessage(String jobid, TableInfo table, Integer maxid, Integer offset, Integer chunk, Integer jobnum,
 			Integer totalJobs, Boolean last, Integer tasknum) {
 		super();
 		this.jobid = jobid;
@@ -57,61 +35,13 @@ public class JobMessage {
 		this.tasknum = tasknum;
 	}
 
-	private void setJsonAndParseMessage(String json) throws ParseException {
-		this.parser = new JSONParser();
-		this.jobj = (JSONObject) parser.parse(json);
-		setJobMessage(jobj);
-	}
-
-	private void setJobMessage(JSONObject jobj){
-
-		this.jobid = (String) jobj.get("jobid");
-		this.table = (String) jobj.get("table");
-		this.offset = new Integer(jobj.get("offset").toString());
-		this.chunk = new Integer(jobj.get("chunk").toString());
-		this.jobnum = new Integer(jobj.get("jobnum").toString());
-		this.totalTasks = new Integer(jobj.get("totaljobs").toString());
-		this.maxid = new Integer(jobj.get("maxid").toString());
-		this.status = JobStatus.valueOf(jobj.get("status").toString());
-		this.tasknum = new Integer(jobj.get("tasknum").toString());
-	}
-	
-	@SuppressWarnings("unchecked")
-	public JSONObject getNewJsonObject(){
-		JSONObject obj = new JSONObject();
-		obj.put("jobid", getJobid());
-		obj.put("table", getTable());
-		obj.put("maxid", getMaxid());
-		obj.put("offset", getOffset());
-		obj.put("chunk", getChunk());
-		obj.put("jobnum", getJobnum());
-		obj.put("last", getLast());
-		obj.put("totaljobs", getTotalTasks());
-		obj.put("status", getStatus().name());
-		obj.put("tasknum", getTasknum());
-		return obj;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public JSONObject getJsonObject(){
-		if (jobj == null)
-			return getNewJsonObject();
-		
-		jobj.put("jobid", getJobid());
-		jobj.put("table", getTable());
-		jobj.put("maxid", getMaxid());
-		jobj.put("offset", getOffset());
-		jobj.put("chunk", getChunk());
-		jobj.put("jobnum", getJobnum());
-		jobj.put("last", getLast());
-		jobj.put("totaljobs", getTotalTasks());
-		jobj.put("status", this.status.name());
-		jobj.put("tasknum", getTasknum());
-		return jobj;
-	}
-
 	public String toJson() {
-		return getJsonObject().toJSONString();
+		try{
+			ObjectMapper mapper = new ObjectMapper();
+			return mapper.writeValueAsString(this);
+		}catch (Exception e) {
+			return "";
+		}
 	}
 
 	public String getJobid() {
@@ -120,10 +50,10 @@ public class JobMessage {
 	public void setJobid(String jobid) {
 		this.jobid = jobid;
 	}
-	public String getTable() {
+	public TableInfo getTable() {
 		return table;
 	}
-	public void setTable(String table) {
+	public void setTable(TableInfo table) {
 		this.table = table;
 	}
 	public Integer getMaxid() {

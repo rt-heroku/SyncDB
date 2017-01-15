@@ -1,8 +1,12 @@
 package com.heroku.syncdbs;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -27,7 +31,7 @@ public class QueueManager {
 
 	private Channel getQChannel() throws Exception {
 		ConnectionFactory factory = new ConnectionFactory();
-		factory.setUri(System.getenv("RABBITMQ_BIGWIG_URL"));
+		factory.setUri(Settings.getQueueUrl());
 		connection = factory.newConnection();
 		return connection.createChannel();
 	}
@@ -63,6 +67,11 @@ public class QueueManager {
 	public void sendMessage(JobMessage jm) throws Exception {
 		channel.basicPublish("", getQName(), MessageProperties.PERSISTENT_TEXT_PLAIN,
 				jm.toJson().getBytes("UTF-8"));
+	}
+
+	public JobMessage parseJsonMessage(byte[] body) throws JsonParseException, JsonMappingException, IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		return mapper.readValue(body, JobMessage.class);
 	}
 
 	public String getQName() {

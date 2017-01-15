@@ -22,11 +22,11 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.heroku.syncdbs.JobLoggerHelper;
+import com.heroku.syncdbs.Settings;
+import com.heroku.syncdbs.TableInfo;
 
 /**
  * Generic data mover class. This class is designed to move data from one
@@ -83,22 +83,15 @@ public class DataMover {
 	}
 
 	protected boolean isDebugEnabled() {
-		String ret = System.getenv("DEBUG") + "";
-		return ret.equals("TRUE");
+		return Settings.isDebug();
 	}
 
 	public String getFromSchema(){
-		String schema = "public";
-		if (System.getenv("TRANSFER_FROM_SCHEMA") != null)
-			schema = System.getenv("TRANSFER_FROM_SCHEMA");
-		return schema;
+		return Settings.getEnvVar(Settings.getTransferFromSchema(), "public");
 	}
 	
 	public String getToSchema(){
-		String schema = "public";
-		if (System.getenv("TRANSFER_TO_SCHEMA") != null)
-			schema = System.getenv("TRANSFER_TO_SCHEMA");
-		return schema;
+		return Settings.getEnvVar(Settings.getTransferToSchema(), "public");
 	}
 	/**
 	 * Create the specified table. To do this the source database will be
@@ -114,23 +107,23 @@ public class DataMover {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public synchronized void dropTableIfExistsAndCreateTable(String fromSchema, String toSchema, String table, int maxId) throws DatabaseException {
+	public synchronized void dropTableIfExistsAndCreateTable(String toSchema, TableInfo table, int maxId) throws DatabaseException {
 		String sql;
 
 		try {
-			sql = target.generateDropTableSQLStatement(toSchema, table);
+			sql = target.generateDropTableSQLStatement(toSchema, table.getName());
 			target.execute(sql);
 			if (isDebugEnabled()){
-				System.out.println("TABLE DROPPED: " + table);
+				System.out.println("TABLE DROPPED: " + table.getFullName());
 				System.out.println("DEBUG - " + sql);
 			}
 
 		} catch (Exception e) {
 			System.out.println("Error while deleting table - " + e.getMessage());
 		}
-		sql = source.generateCreateTableSQLStatement(fromSchema, toSchema, table, maxId);
+		sql = source.generateCreateTableSQLStatement(toSchema, table, maxId);
 		if (isDebugEnabled()){
-			System.out.println("CREATING TABLE " + table);
+			System.out.println("CREATING TABLE " + table.getName());
 			System.out.println("DEBUG - execute in target: " + sql);
 		}
 		target.execute(sql);
@@ -158,21 +151,26 @@ public class DataMover {
 		return count;
 	}
 
-	public synchronized Map<String, Integer> getListOfTableNamesAndMaxId(Database db, String schema) throws Exception {
-		Map<String, Integer> m = new HashMap<String, Integer>();
-		Collection<String> list = db.listTables(schema);
-		for (String table : list) {
+	public synchronized List<TableInfo> getListOfTableNamesAndMaxId(Database db, String schema, boolean analyzed) throws Exception {
+		List<TableInfo> ts = new ArrayList<TableInfo>();
+		Collection<TableInfo> list = null;
+		if (Settings.useViewInventory())
+			list = db.getListTablesFromInventory();
+		else
+			list = db.listTables(schema);
+		for (TableInfo t : list) {
 			try {
-				if (!table.startsWith("pg_")) {
-					int count = getTableMaxId(db, schema + "." + table);
-					m.put(table, count);
+				if (!analyzed){
+					int maxid = getTableMaxId(db, t.getFullName());
+					t.setMaxid(maxid);
 				}
+				ts.add(t);
 			} catch (DatabaseException e) {
 				e.printStackTrace();
 				throw new Exception(e);
 			}
 		}
-		return m;
+		return ts;
 	}
 
 	/**
@@ -183,12 +181,12 @@ public class DataMover {
 	 *             If an error occurs.
 	 */
 	private synchronized void dropAllTablesIfExistsAndCreateAllTables(String fromSchema, String toSchema) throws DatabaseException {
-		Collection<String> list = source.listTables(fromSchema);
-		for (String table : list) {
+		Collection<TableInfo> list = source.listTables(fromSchema);
+		for (TableInfo t : list) {
 			try {
-				if (!table.startsWith("pg_")) {
-					dropTableIfExistsAndCreateTable(fromSchema, toSchema, table, 0);
-					tables.add(table);
+				if (!t.getName().startsWith("pg_")) {
+					dropTableIfExistsAndCreateTable(toSchema, t, 0);
+					tables.add(t.getFullName());
 				}
 			} catch (DatabaseException e) {
 				e.printStackTrace();
@@ -197,11 +195,11 @@ public class DataMover {
 	}
 
 	protected synchronized void debugSourceViews(String schema) throws DatabaseException {
-		Collection<String> list = source.listTables(schema);
-		for (String table : list) {
-			System.out.println("Found Table/View:" + table);
+		Collection<TableInfo> list = source.listTables(schema);
+		for (TableInfo t : list) {
+			System.out.println("Found Table/View:" + t.getFullName());
 
-			Collection<String> columns = source.listColumns(schema, table);
+			Collection<String> columns = source.listColumns(schema, t.getName());
 
 			for (String column : columns) {
 				System.out.println("\tColumn name: " + column);
@@ -210,11 +208,11 @@ public class DataMover {
 	}
 
 	protected synchronized void debugTargetTables(String schema) throws DatabaseException {
-		Collection<String> list = target.listTables(schema);
-		for (String table : list) {
-			System.out.println("Found Table in target: " + table);
+		Collection<TableInfo> list = source.listTables(schema);
+		for (TableInfo t : list) {
+			System.out.println("Found Table in target: " + t.getFullName());
 
-			Collection<String> columns = source.listColumns(schema, table);
+			Collection<String> columns = source.listColumns(schema, t.getName());
 
 			for (String column : columns) {
 				System.out.println("\tColumn name: " + column);
@@ -232,15 +230,15 @@ public class DataMover {
 	 *             If a database error occurs.
 	 */
 
-	private synchronized void createSelectAndInsertStatementsAndCopyTableData(String fromSchema, String toSchema, String table, int offset, int limit) throws DatabaseException {
+	private synchronized void createSelectAndInsertStatementsAndCopyTableData(String toSchema, TableInfo table, int offset, int limit) throws DatabaseException {
 		StringBuffer selectSQL = new StringBuffer();
 		StringBuffer insertSQL = new StringBuffer();
 		StringBuffer values = new StringBuffer();
-		Collection<String> columns = source.listColumns(table, fromSchema);
+		Collection<String> columns = source.listColumns(table.getName(), table.getSchema());
 		selectSQL.append("SELECT ");
 		insertSQL.append("INSERT INTO ");
 		insertSQL.append(toSchema + ".");
-		insertSQL.append(table.toLowerCase());
+		insertSQL.append(table.getName());
 		insertSQL.append("(");
 
 		boolean first = true;
@@ -257,8 +255,7 @@ public class DataMover {
 			values.append("?");
 		}
 		selectSQL.append(" FROM ");
-		selectSQL.append(fromSchema + ".");
-		selectSQL.append(table);
+		selectSQL.append(table.getFullName());
 
 		insertSQL.append(") VALUES (");
 		insertSQL.append(values);
@@ -275,7 +272,7 @@ public class DataMover {
 		copyDataFromSelectIntoInsert(selectSQL.toString(), insertSQL.toString(), table);
 	}
 
-	private void copyDataFromSelectIntoInsert(String selectSQL, String insertSQL, String table) throws DatabaseException {
+	private void copyDataFromSelectIntoInsert(String selectSQL, String insertSQL, TableInfo table) throws DatabaseException {
 		PreparedStatement statementTrg = null;
 		PreparedStatement statementSrc = null;
 		ResultSet rs = null;
@@ -289,7 +286,7 @@ public class DataMover {
 
 			int rows = 0;
 			if (isDebugEnabled()) 
-				System.out.println("Copying data TABLE [" + table + "] ... ");
+				System.out.println("Copying data TABLE [" + table.getFullName() + "] ... ");
 
 			while (rs.next()) {
 				hasCommited = false;
@@ -303,7 +300,7 @@ public class DataMover {
 					hasCommited = true;
 				}
 				if ((rows % 5000) == 0){
-					JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table, rows);
+					JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table.toString(), rows);
 				}
 				if ((rows % 100000) == 0){
 					System.out.println("TABLE [" + table + "] Rows -- " + rows);
@@ -316,7 +313,7 @@ public class DataMover {
 			setRowsLoaded(rows);
 			
 			if (rows > 0){
-				JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table, rows);
+				JobLoggerHelper.logTask(getSource(), getJobid(), getTaskNum() ,table.getFullName(), rows);
 				System.out.println("TABLE [" + table + "] Rows -- " + rows);
 			}
 		} catch (SQLException e) {
@@ -389,7 +386,8 @@ public class DataMover {
 	private void copyTableData(String sFrom,String sTo) throws DatabaseException {
 		for (String table : tables) {
 			long t1 = System.currentTimeMillis();
-			createSelectAndInsertStatementsAndCopyTableData(sFrom, sTo, table, 0, 0);
+			TableInfo ti = new TableInfo(sFrom, table);
+			createSelectAndInsertStatementsAndCopyTableData(sTo, ti, 0, 0);
 			System.out
 					.println("Table " + table + " copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 		}
@@ -404,14 +402,14 @@ public class DataMover {
 		copyTableData(fromSchema, toSchema);
 	}
 
-	public void copyChunkTable(String fromSchema, String toSchema, String table, int offset, int limit) throws DatabaseException{
+	public void copyChunkTable(String toSchema, TableInfo table, int offset, int limit) throws DatabaseException{
 		setRowsLoaded(0);
-		createSelectAndInsertStatementsAndCopyTableData(fromSchema, toSchema, table, offset, limit);
+		createSelectAndInsertStatementsAndCopyTableData(toSchema, table, offset, limit);
 	}
-	public void exportDatabase(String fromSchema, String toSchema, String table) throws DatabaseException {
-		dropTableIfExistsAndCreateTable(fromSchema, toSchema, table, 0);
+	public void exportTable(String fromSchema, String toSchema, TableInfo table) throws DatabaseException {
+		dropTableIfExistsAndCreateTable(toSchema, table, 0);
 		long t1 = System.currentTimeMillis();
-		createSelectAndInsertStatementsAndCopyTableData(fromSchema, toSchema, table, 0, 0);
+		createSelectAndInsertStatementsAndCopyTableData(toSchema, table, 0, 0);
 		System.out.println("Table " + table + " copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");
 	}
 
@@ -420,7 +418,7 @@ public class DataMover {
 		truncateTable(table);
 
 		System.out.println("About to COPY table data - " + table);
-		createSelectAndInsertStatementsAndCopyTableData(fromSchema, toSchema, table.toLowerCase(), 0, 0);
+		createSelectAndInsertStatementsAndCopyTableData(toSchema, new TableInfo(fromSchema, table), 0, 0);
 	}
 
 	private void truncateTable(String table) throws DatabaseException {
