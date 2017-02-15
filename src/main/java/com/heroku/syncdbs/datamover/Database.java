@@ -354,6 +354,43 @@ public abstract class Database {
 		return lti;
 	}
 
+	public Collection<TableInfo> getViewstoRefreshFromViewInventory() throws DatabaseException{
+		List<TableInfo> lti = new ArrayList<TableInfo>();
+		String sql;
+		PreparedStatement statementSrc = null;
+		ResultSet rs = null;
+		try {
+
+			sql = "SELECT \"schema\", object_name, \"type\", \"number_of_rows\", \"refresh\", \"analyze\", \"maxid\" FROM syncdb.objects_to_transfer WHERE resfresh = true";
+			statementSrc = connection.prepareStatement(sql);
+			rs = statementSrc.executeQuery();
+
+			while (rs.next()){
+				TableInfo t = new TableInfo();
+				t.setSchema(rs.getString(1));
+				t.setName("\"" + rs.getString(2) + "\"");
+				t.setType(rs.getString(3));
+				t.setCount(rs.getInt(4));
+				t.setRefresh(rs.getBoolean(5));
+				t.setAnalyze(rs.getBoolean(6));
+				t.setMaxid(rs.getInt(7));
+				lti.add(t);
+			}
+			
+		} catch (Exception e) {
+			System.out.println("Error while retrieving items to sync - " + e.getMessage());
+			throw new DatabaseException(e);
+		} finally {
+			try{
+				rs.close();
+				statementSrc.close();
+			} catch (Exception e){
+				
+			}
+		}
+		return lti;
+	}
+
 	/**
 	 * Determine if a table exists.
 	 * 
@@ -463,7 +500,8 @@ public abstract class Database {
 	}
 
 	public void refreshMaterializedView(String schema, String v) throws DatabaseException {
-		String sql = "REFRESH MATERIALIZED VIEW " + schema + ".\"" + v + "\"";
+		String view = schema.equals("") ? v : schema + ".\"" + v + "\"";
+		String sql = "REFRESH MATERIALIZED VIEW " + view;
 		execute(sql);
 	}
 

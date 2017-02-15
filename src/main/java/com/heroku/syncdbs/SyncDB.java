@@ -112,20 +112,38 @@ public class SyncDB {
 			validateConnection("target");
 			validateConnection("source");
 			
-			Collection<String> list = Arrays.asList(views.split("\\;"));
-			
-			for (String v : list){
-				String view = schema + ".\"" + v + "\"";
-				System.out.print("Refreshing MATERIALIZED VIEW " + view + " ... ");
-				db.refreshMaterializedView(schema, v);
-				db.analyzeTable(view);
-				System.out.println("Done!");
-			}
+			if (Settings.useViewInventory())
+				refreshViewsSetInViewInventory(db);
+			else
+				refreshViewsSetInVariable(db, views, schema);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		}		
+	}
+
+	private void refreshViewsSetInViewInventory(Database db) throws DatabaseException {
+		Collection<TableInfo> list = db.getViewstoRefreshFromViewInventory();
+		
+		for (TableInfo v : list){
+			System.out.print("Refreshing MATERIALIZED VIEW " + v.getFullName() + " ... ");
+			db.refreshMaterializedView("", v.getFullName());
+			db.analyzeTable(v.getFullName());
+			System.out.println("Done!");
+		}
+	}
+
+	private void refreshViewsSetInVariable(Database db, String views, String schema) throws DatabaseException {
+		Collection<String> list = Arrays.asList(views.split("\\;"));
+		
+		for (String v : list){
+			String view = schema + ".\"" + v + "\"";
+			System.out.print("Refreshing MATERIALIZED VIEW " + view + " ... ");
+			db.refreshMaterializedView(schema, v);
+			db.analyzeTable(view);
+			System.out.println("Done!");
+		}
 	}
 	protected void dropAndRecreateTableInTargetIfExists(TableInfo ti, int maxId) throws Exception {
 		try {
@@ -197,11 +215,11 @@ public class SyncDB {
 	}
 	
 	public String getFromSchema(){
-		return Settings.getEnvVar(Settings.getTransferFromSchema(), "public");
+		return Settings.getDefaultVal(Settings.getTransferFromSchema(), "public");
 	}
 	
 	public String getToSchema(){
-		return Settings.getEnvVar(Settings.getTransferToSchema(), "public");
+		return Settings.getDefaultVal(Settings.getTransferToSchema(), "public");
 	}
 
 	public List<TableInfo> analyzeTables(Database db, List<TableInfo> tables) throws Exception {

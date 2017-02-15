@@ -77,7 +77,7 @@ CREATE TABLE syncdb.objects_to_transfer
 );
 
 ------------------------------------------------------------------
---  VIEW all_items
+--  VIEW all_transferable_objects
 --
 --  View to get all elements on the database that are 
 --  transferrable.
@@ -128,3 +128,58 @@ AS
             AND c.relname NOT LIKE 'pg_%'
    ORDER BY c.oid;
 
+   
+------------------------------------------------------------------
+--  VIEW all_object_size
+--
+--  View to get the size of all elements on the database
+--
+------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW syncdb.all_object_size
+AS
+     SELECT oid,
+            table_schema,
+            table_name,
+            row_estimate,
+            pg_size_pretty (total_bytes) AS total,
+            pg_size_pretty (index_bytes) AS INDEX,
+            pg_size_pretty (toast_bytes) AS toast,
+            pg_size_pretty (table_bytes) AS "table_size"
+       FROM (SELECT *,
+                    total_bytes - index_bytes - COALESCE (toast_bytes, 0)
+                       AS table_bytes
+               FROM (SELECT c.oid,
+                            nspname                      AS table_schema,
+                            relname                      AS TABLE_NAME,
+                            c.reltuples                  AS row_estimate,
+                            pg_total_relation_size (c.oid) AS total_bytes,
+                            pg_indexes_size (c.oid)      AS index_bytes,
+                            pg_total_relation_size (reltoastrelid)
+                               AS toast_bytes
+                       FROM pg_class c
+                            LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+                      WHERE     relkind = 'r'
+                            AND nspname NOT IN
+                                   ('pg_catalog', 'information_schema')) a) b
+   ORDER BY table_schema, table_name;
+
+   
+------------------------------------------------------------------
+--  VIEW top_20_largest_objects
+--
+--  View to get the 20 largest objects in the database
+--
+------------------------------------------------------------------
+
+CREATE OR REPLACE VIEW syncdb.top_20_largest_objects
+AS
+    SELECT nspname || '.' || relname AS "relation", 
+	       pg_size_pretty(pg_total_relation_size(C.oid)) AS "total_size"
+      FROM pg_class C
+  	       LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+     WHERE nspname NOT IN ('pg_catalog', 'information_schema')
+       AND C.relkind <> 'i'
+       AND nspname !~ '^pg_toast'
+  ORDER BY pg_total_relation_size(C.oid) DESC 
+  LIMIT 20;
