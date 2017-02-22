@@ -152,12 +152,15 @@ public abstract class Database {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public String generateCreateTableSQLStatement(String sTo, TableInfo table, int maxId) throws DatabaseException {
+	public String generateCreateTableSQLStatement(String sTo, TableInfo table) throws DatabaseException {
 		StringBuffer result = new StringBuffer();
 
 		ResultSetMetaData md = null;
 		Statement stmt = null;
 		ResultSet rs = null;
+		
+		int maxId = table.getMaxid();
+		
 		synchronized ( connection ) {
 			try {
 				StringBuffer sql = new StringBuffer();
@@ -183,12 +186,17 @@ public abstract class Database {
 				result.append(sTo + "." + table.getName());
 				result.append(" ( ");
 	
+				boolean idColumnFound = false;
+				
 				for (int i = 1; i <= md.getColumnCount(); i++) {
 					if (i != 1)
 						result.append(',');
 					result.append("\"" + md.getColumnName(i) + "\"");
 					result.append(' ');
 	
+					if (!idColumnFound)
+						idColumnFound = md.getColumnName(i).equals("id");
+					
 					String type = processType(md.getColumnTypeName(i), md
 							.getPrecision(i));
 					result.append(type);
@@ -204,7 +212,9 @@ public abstract class Database {
 				DatabaseMetaData dbm = connection.getMetaData();
 				ResultSet primary = dbm.getPrimaryKeys(null, table.getSchema(), table.getName());
 				boolean first = true;
+				boolean foundPK = false;
 				while (primary.next()) {
+					foundPK = true;
 					if (first) {
 						first = false;
 						result.append(',');
@@ -213,6 +223,12 @@ public abstract class Database {
 						result.append(",");
 	
 					result.append(primary.getString("COLUMN_NAME"));
+				}
+				
+				//since it is reading VIEWs and they don't have PK, we know that the id field has to be
+				if ((!foundPK) && (idColumnFound)){
+					result.append(",PRIMARY KEY(id");
+					first = false;
 				}
 	
 				if (!first)

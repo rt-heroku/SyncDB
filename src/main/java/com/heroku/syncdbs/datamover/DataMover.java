@@ -107,7 +107,7 @@ public class DataMover {
 	 * @throws DatabaseException
 	 *             If a database error occurs.
 	 */
-	public synchronized void dropTableIfExistsAndCreateTable(String toSchema, TableInfo table, int maxId) throws DatabaseException {
+	public synchronized void dropTableIfExistsAndCreateTable(String toSchema, TableInfo table) throws DatabaseException {
 		String sql;
 
 		try {
@@ -121,7 +121,7 @@ public class DataMover {
 		} catch (Exception e) {
 			System.out.println("Error while deleting table - " + e.getMessage());
 		}
-		sql = source.generateCreateTableSQLStatement(toSchema, table, maxId);
+		sql = source.generateCreateTableSQLStatement(toSchema, table);
 		if (isDebugEnabled()){
 			System.out.println("CREATING TABLE " + table.getName());
 			System.out.println("DEBUG - execute in target: " + sql);
@@ -185,7 +185,7 @@ public class DataMover {
 		for (TableInfo t : list) {
 			try {
 				if (!t.getName().startsWith("pg_")) {
-					dropTableIfExistsAndCreateTable(toSchema, t, 0);
+					dropTableIfExistsAndCreateTable(toSchema, t);
 					tables.add(t.getFullName());
 				}
 			} catch (DatabaseException e) {
@@ -407,7 +407,7 @@ public class DataMover {
 		createSelectAndInsertStatementsAndCopyTableData(toSchema, table, offset, limit);
 	}
 	public void exportTable(String fromSchema, String toSchema, TableInfo table) throws DatabaseException {
-		dropTableIfExistsAndCreateTable(toSchema, table, 0);
+		dropTableIfExistsAndCreateTable(toSchema, table);
 		long t1 = System.currentTimeMillis();
 		createSelectAndInsertStatementsAndCopyTableData(toSchema, table, 0, 0);
 		System.out.println("Table " + table + " copied in " + (System.currentTimeMillis() - t1) / 1000 + " seconds");

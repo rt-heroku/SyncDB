@@ -145,10 +145,10 @@ public class SyncDB {
 			System.out.println("Done!");
 		}
 	}
-	protected void dropAndRecreateTableInTargetIfExists(TableInfo ti, int maxId) throws Exception {
+	protected void dropAndRecreateTableInTargetIfExists(TableInfo ti) throws Exception {
 		try {
 			String toSchema = getToSchema();
-			getMover().dropTableIfExistsAndCreateTable(toSchema, ti, maxId);
+			getMover().dropTableIfExistsAndCreateTable(toSchema, ti);
 		} catch (DatabaseException e) {
 			throw new Exception(e);
 		}

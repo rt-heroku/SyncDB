@@ -49,11 +49,12 @@ public class RunJob {
 				int maxid = table.getMaxid();
 				jobnum++;
 
-				syncDB.dropAndRecreateTableInTargetIfExists(table, maxid);
+				syncDB.dropAndRecreateTableInTargetIfExists(table);
 
-				List<JobMessage> tasks = new ArrayList<JobMessage>();
-				int numOfTasks = analyzeJob(jobid, chunk, jobnum, table, maxid, tasks);
+				List<JobMessage> tasks = analyzeJob(jobid, chunk, jobnum, table);
 
+				int numOfTasks = tasks.size();
+				
 				JobLoggerHelper.logJobDetail(sourceDb, jobid, table.getFullName(), jobnum, numOfTasks, maxid, JobStatus.CREATED, "");
 
 				for (JobMessage o : tasks){
@@ -69,7 +70,12 @@ public class RunJob {
 				}
 				logPublishingJob(numOfTasks, table);
 				
-				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getFullName(), JobStatus.SENT, jobnum, tasks.toString());
+				if (numOfTasks == 0){
+					JobLoggerHelper.logTask(sourceDb, jobid, 1, table.getFullName(), 0);
+					JobLoggerHelper.logTaskStatus(sourceDb, jobid, 1,table.getName(), JobStatus.FINISHED);
+					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.FINISHED, jobnum, "NOTHING TO PROCESS, ORIGIN TABLE HAS 0 (zero) records and 0 (zero) tasks");
+				}else
+					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.SENT, jobnum, tasks.toString());
 
 			}
 			JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.SENT);
@@ -86,9 +92,10 @@ public class RunJob {
 		}
 	}
 
-	private int analyzeJob(String jobid, int chunk, int jobnum, TableInfo table, int maxid, List<JobMessage> tasks) {
+	private List<JobMessage> analyzeJob(String jobid, int chunk, int jobnum, TableInfo table) {
+		List<JobMessage> tasks = new ArrayList<JobMessage>();
 		int tasknum = 0;
-		int jobChunk = maxid;
+		int jobChunk = table.getMaxid();
 		int offset = 0;
 		
 		while (jobChunk > 0) {
@@ -99,7 +106,7 @@ public class RunJob {
 
 			jm.setJobid(jobid);
 			jm.setTable(table);
-			jm.setMaxid(maxid);
+			jm.setMaxid(table.getMaxid());
 			jm.setOffset(offset);
 			jm.setChunk(chunk);
 			jm.setTasknum(tasknum);
@@ -114,7 +121,7 @@ public class RunJob {
 				
 			tasks.add(jm);
 		}
-		return tasknum;
+		return tasks;
 	}
 
 	private static void logPublishingJobItem(int jobnum, JobMessage o) {

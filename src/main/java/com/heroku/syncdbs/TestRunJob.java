@@ -10,7 +10,7 @@ import com.heroku.syncdbs.enums.JobType;
 
 public class TestRunJob {
 
-	private static final String JOB_USER = "HEROKU TEST CLI";
+	private static final String JOB_USER = "DEBUG";
 
 	public static void main(String[] args) {
 		try {
@@ -34,8 +34,9 @@ public class TestRunJob {
 			if (Settings.refreshViews())
 				syncDB.refreshMaterializedViews(sourceDb);
 			
-			List<TableInfo> tables = syncDB.getTablesToMoveFromSourceAndGetTheMaxId();
-			
+//			List<TableInfo> tables = syncDB.getTablesToMoveFromSourceAndGetTheMaxId();
+			List<TableInfo> tables = getOnlyOneTestTableWithMaxIdEqualsToZero();
+
 			if (Settings.analyzeBeforeProcess())
 				tables = syncDB.analyzeTables(sourceDb, tables);
 
@@ -61,7 +62,12 @@ public class TestRunJob {
 					
 				}
 
-				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.SENT, jobnum, tasks.toString());
+				if (numOfTasks == 0){
+					JobLoggerHelper.logTask(sourceDb, jobid, 1, table.getFullName(), 0);
+					JobLoggerHelper.logTaskStatus(sourceDb, jobid, 1,table.getName(), JobStatus.FINISHED);
+					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.FINISHED, jobnum, "NOTHING TO PROCESS, ORIGIN TABLE HAS 0 (zero) records and 0 (zero) tasks");
+				}else
+					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.SENT, jobnum, tasks.toString());
 
 			}
 			JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.SENT);
@@ -77,6 +83,20 @@ public class TestRunJob {
 		}
 	}
 
+	private List<TableInfo> getOnlyOneTestTableWithMaxIdEqualsToZero() {
+		List<TableInfo> lti = new ArrayList<TableInfo>();
+		TableInfo t = new TableInfo();
+		t.setSchema("transfer");
+		t.setName("\"Seal_Event_Services_Governance_Approval_Request\"");
+		t.setType("VIEW");
+		t.setCount(0);
+		t.setRefresh(false);
+		t.setAnalyze(false);
+		t.setMaxid(0);
+		lti.add(t);
+
+		return lti;
+	}
 	private int analyzeJob(String jobid, int chunk, int jobnum, TableInfo table, int maxid, List<JobMessage> tasks) {
 		int tasknum = 0;
 		int jobChunk = maxid;

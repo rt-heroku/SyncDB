@@ -21,10 +21,10 @@ public class TestQWorker {
 		try {
 
 			JobMessage jm = new JobMessage();
-			TableInfo ti = new TableInfo("transfer","\"Seal_DGR_AdminForm\"","",0,71);
+			TableInfo ti = new TableInfo("transfer","\"Seal_Event_Services_Governance_Approval_Request\"","",0,71);
 			jm.setTable(ti);
 			jm.setOffset(0);
-			jm.setMaxid(64333);
+			jm.setMaxid(0);
 			jm.setJobnum(1);
 			jm.setJobid(UUID.randomUUID().toString());
 			jm.setTasknum(1);
@@ -46,7 +46,7 @@ public class TestQWorker {
 			}catch (Exception e) {
 			}
 			
-			syncDB.dropAndRecreateTableInTargetIfExists(jm.getTable(), 120324);
+			syncDB.dropAndRecreateTableInTargetIfExists(jm.getTable());
 
 //			JobLoggerHelper.logInitialTask(syncDB.getSource(), jm);
 
