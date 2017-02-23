@@ -339,6 +339,7 @@ public abstract class Database {
 		try {
 
 			sql = "SELECT \"schema\", object_name, \"type\", \"number_of_rows\", \"refresh\", \"analyze\", \"maxid\" FROM syncdb.objects_to_transfer WHERE transfer = true";
+			//sql = "SELECT \"schema\", object_name, \"type\", \"number_of_rows\", \"refresh\", \"analyze\", \"maxid\" FROM syncdb.rt_object_test WHERE transfer = true";
 			statementSrc = connection.prepareStatement(sql);
 			rs = statementSrc.executeQuery();
 
@@ -364,7 +365,7 @@ public abstract class Database {
 				rs.close();
 				statementSrc.close();
 			} catch (Exception e){
-				
+				System.out.println(e.getMessage());
 			}
 		}
 		return lti;

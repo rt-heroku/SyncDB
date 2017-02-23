@@ -72,10 +72,10 @@ public class RunJob {
 				
 				if (numOfTasks == 0){
 					JobLoggerHelper.logTask(sourceDb, jobid, 1, table.getFullName(), 0);
-					JobLoggerHelper.logTaskStatus(sourceDb, jobid, 1,table.getName(), JobStatus.FINISHED);
-					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.FINISHED, jobnum, "NOTHING TO PROCESS, ORIGIN TABLE HAS 0 (zero) records and 0 (zero) tasks");
+					JobLoggerHelper.logTaskStatus(sourceDb, jobid, 1,table.getFullName(), JobStatus.FINISHED);
+					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getFullName(), JobStatus.FINISHED, jobnum, "NOTHING TO PROCESS, ORIGIN TABLE HAS 0 (zero) records and 0 (zero) tasks");
 				}else
-					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.SENT, jobnum, tasks.toString());
+					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getFullName(), JobStatus.SENT, jobnum, tasks.toString());
 
 			}
 			JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.SENT);
@@ -125,7 +125,7 @@ public class RunJob {
 	}
 
 	private static void logPublishingJobItem(int jobnum, JobMessage o) {
-		System.out.println("MANUALLY Publishing task number[" + o.getTasknum() + "] of " + jobnum + " tasks for TABLE[" + o.getTable()
+		System.out.println("MANUALLY Publishing task number[" + o.getTasknum() + "] of " + jobnum + " tasks for TABLE[" + o.getTable().getFullName()
 				+ "] with total " + o.getMaxid() + " rows - OFFSET: " + o.getOffset() + " - CHUNK: " + o.getChunk());
 	}
 

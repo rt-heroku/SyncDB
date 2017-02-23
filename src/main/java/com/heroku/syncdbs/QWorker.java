@@ -64,7 +64,7 @@ public class QWorker {
 		String logmsg;
 		long seconds = (System.currentTimeMillis() - t1) / 1000;
 		logmsg = "QWorker ENDED     [" + getCurrentTime() + "] Job ID [" + jm.getJobid() + "] (" + jm.getTasknum()
-				+ " of " + jm.getTotalTasks() + ") in [" + seconds + "] seconds for table [" + jm.getTable() + "] !";
+				+ " of " + jm.getTotalTasks() + ") in [" + seconds + "] seconds for table [" + jm.getTable().getFullName() + "] !";
 		System.out.println(logmsg);
 	}
 

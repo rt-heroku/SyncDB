@@ -55,7 +55,7 @@ public class JobLoggerHelper {
 			st.setTimestamp(3, getTimestampNow());
 			st.setString(4, jobid);
 
-			st.execute();
+			st.executeUpdate();
 			st.close();
 			System.out.println("Job [" + jobid + "] - FINISHED");
 
@@ -79,7 +79,7 @@ public class JobLoggerHelper {
 			st.setString(5, table);
 			st.setInt(6, jobNum);
 
-			st.execute();
+			st.executeUpdate();
 			st.close();
 			System.out.println("JobDetail [" + jobid + "] - " + jobStatus.name());
 
@@ -108,7 +108,7 @@ public class JobLoggerHelper {
 			st.setInt(7, jobNum);
 			st.setInt(8, maxid);
 
-			st.execute();
+			st.executeUpdate();
 			st.close();
 
 		} catch (Exception e) {
@@ -119,7 +119,7 @@ public class JobLoggerHelper {
 	}
 
 	public static void logInitialTask(Database db, JobMessage jm) {
-		logInitialTask(db, jm.getTable().toString(), jm.getJobid(), jm.getTasknum());
+		logInitialTask(db, jm.getTable().getFullName(), jm.getJobid(), jm.getTasknum());
 	}
 	public static void logInitialTask(Database db, String table, String jobId, int taskNum) {
 		try {
@@ -131,7 +131,7 @@ public class JobLoggerHelper {
 			st.setInt(4, 0);
 			st.setString(5, JobStatus.SENT.name());
 			st.setTimestamp(6, getTimestampNow());
-			st.execute();
+			st.executeUpdate();
 			st.close();
 		} catch (Exception e) {
 			System.err.println(
@@ -161,7 +161,7 @@ public class JobLoggerHelper {
 			st.setString(10, jobid);
 			st.setTimestamp(11, t);
 
-			st.execute();
+			st.executeUpdate();
 			st.close();
 
 		} catch (Exception e) {
@@ -211,7 +211,7 @@ public class JobLoggerHelper {
 			st.setString(4, table);
 			st.setInt(5, taskNum);
 
-			st.execute();
+			st.executeUpdate();
 			st.close();
 
 		} catch (Exception e) {
@@ -223,16 +223,32 @@ public class JobLoggerHelper {
 	public static void analyzeJobTask(Database db, JobMessage jm) throws SQLException, DatabaseException {
 		int jobs = jm.getTotalTasks();
 		int count = countFinishedTasks(db, jm);
-
+//System.out.println("analyzeJobTask -> Status:" + jm.getStatus().name() + " - jobs:" + jobs + " - count:" + count );
 		if (count == jobs){
 			logJobDetailStatus(db, jm.getJobid(), jm.getTable().getFullName(), JobStatus.FINISHED, jm.getJobnum(), "");
+			
+			//Slowed down on purpose since for some reason transaction is not being processed.
+			sleep();					
+			
+//			System.out.println("analyzeJobTask -> Counting Finished Jobs: " + JobLoggerHelper.countFinishedJobs(db, jm));
+
 			analyzeJobDetails(db, jm);
+		}
+	}
+
+	private static void sleep() {
+		try {
+		    Thread.sleep(500);
+		} catch(InterruptedException ex) {
+		    Thread.currentThread().interrupt();
 		}
 	}
 
 	private static void analyzeJobDetails(Database db, JobMessage jm) throws SQLException, DatabaseException {
 		int jobs = getNumOfJobs(db, jm.getJobid());
 		int count = countFinishedJobs(db, jm);
+
+		System.out.println("analyzeJobDetails -> Status:" + jm.getStatus().name() + " - jobs:" + jobs + " - count:" + count + "\n" + jm.toJson());
 
 		if(count == jobs)
 			logEndOfJob(db, jm.getJobid());
@@ -253,7 +269,7 @@ public class JobLoggerHelper {
 	private static int countFinishedTasks(Database db, JobMessage jm) throws SQLException, DatabaseException{
 		ResultSet rs = null;
 		int count = 0;
-		String sql = "SELECT count(*) FROM syncdb.task WHERE jobid='" + jm.getJobid() + "' AND \"table\"='" + jm.getTable()
+		String sql = "SELECT count(*) FROM syncdb.task WHERE jobid='" + jm.getJobid() + "' AND \"table\"='" + jm.getTable().getFullName()
 				+ "' and status = '" + JobStatus.FINISHED.name() + "'";
 		rs = db.prepareStatement(sql).executeQuery();
 		if (rs.next())
@@ -262,7 +278,7 @@ public class JobLoggerHelper {
 		return count;
 	}
 	
-	private static int countFinishedJobs(Database db, JobMessage jm) throws SQLException, DatabaseException{
+	public static int countFinishedJobs(Database db, JobMessage jm) throws SQLException, DatabaseException{
 		ResultSet rs = null;
 		int count = 0;
 		String sql = "SELECT count(*) FROM syncdb.job_detail WHERE jobid='" + jm.getJobid() + "' and status = '" + JobStatus.FINISHED.name() + "'";
