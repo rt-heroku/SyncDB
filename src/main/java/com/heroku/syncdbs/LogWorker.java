@@ -20,7 +20,7 @@ public class LogWorker {
 	public void run() throws Exception {
 		SyncDB syncDB = new SyncDB();
 		syncDB.connectBothDBs();
-		
+
 		logQ.connect(Settings.getLogQueueName());
 		
 		try {
@@ -29,7 +29,6 @@ public class LogWorker {
 				if (delivery != null) {
 					long t1 = System.currentTimeMillis();
 					JobMessage jm = logQ.parseJsonMessage(delivery.getBody());
-//System.out.println("-----------------------------------    Starting !!! " + jm.getStatus());
 					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getTasknum(), jm.getTable().getFullName(), jm.getStatus());
 
 					logQ.ack(delivery);
@@ -37,8 +36,6 @@ public class LogWorker {
 						JobLoggerHelper.analyzeJobTask(syncDB.getSource(), jm);
 					
 					logEndMessage(t1, jm);
-//System.out.println("-----------------------------------    Ending !!! ");
-					
 				}
 			}
 		} catch (Exception e) {

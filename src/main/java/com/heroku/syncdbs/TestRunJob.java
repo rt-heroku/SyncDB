@@ -62,12 +62,7 @@ public class TestRunJob {
 					
 				}
 
-				if (numOfTasks == 0){
-					JobLoggerHelper.logTask(sourceDb, jobid, 1, table.getFullName(), 0);
-					JobLoggerHelper.logTaskStatus(sourceDb, jobid, 1,table.getName(), JobStatus.FINISHED);
-					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.FINISHED, jobnum, "NOTHING TO PROCESS, ORIGIN TABLE HAS 0 (zero) records and 0 (zero) tasks");
-				}else
-					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.SENT, jobnum, tasks.toString());
+				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getName(), JobStatus.SENT, jobnum, tasks.toString());
 
 			}
 			JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.SENT);
@@ -102,7 +97,7 @@ public class TestRunJob {
 		int jobChunk = maxid;
 		int offset = 0;
 		
-		while (jobChunk > 0) {
+		while (jobChunk >= 0) {
 			JobMessage jm = new JobMessage();
 
 			jobChunk = jobChunk - chunk;

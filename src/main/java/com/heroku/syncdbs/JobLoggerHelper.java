@@ -4,7 +4,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.heroku.syncdbs.datamover.Database;
 import com.heroku.syncdbs.datamover.DatabaseException;
@@ -42,6 +46,27 @@ public class JobLoggerHelper {
 			e.printStackTrace();
 		}
 
+	}
+	public static void logJobStatusAndTables(Database db, String jobid, JobStatus jobStatus, int tables) {
+		try {
+			
+			String sql = "UPDATE syncdb.job SET status = ?, status_date = ?, num_of_jobs = ? WHERE jobid = ?";
+			PreparedStatement st = db.prepareStatement(sql);
+			
+			st.setString(1, jobStatus.name());
+			st.setTimestamp(2, getTimestampNow());
+			st.setInt(3, tables);
+			st.setString(4, jobid);
+			
+			st.execute();
+			st.close();
+			System.out.println("Job [" + jobid + "] - " + jobStatus.name());
+			
+		} catch (Exception e) {
+			System.err.println("Error logging Job - " + e.getMessage());
+			e.printStackTrace();
+		}
+		
 	}
 
 	public static void logEndOfJob(Database db, String jobid) {
@@ -201,7 +226,6 @@ public class JobLoggerHelper {
 	}
 	public static void logTaskStatus(Database db, String jobId, int taskNum, String table, JobStatus j) {
 		try {
-
 			String sql = "UPDATE syncdb.task SET status = ?, status_date = ? WHERE jobid = ? and \"table\" =  ? and tasknum = ?";
 			PreparedStatement st = db.prepareStatement(sql);
 
@@ -212,6 +236,7 @@ public class JobLoggerHelper {
 			st.setInt(5, taskNum);
 
 			st.executeUpdate();
+			System.out.println("Rows updated: " + st.getUpdateCount() + "\n" + st);
 			st.close();
 
 		} catch (Exception e) {
@@ -223,33 +248,16 @@ public class JobLoggerHelper {
 	public static void analyzeJobTask(Database db, JobMessage jm) throws SQLException, DatabaseException {
 		int jobs = jm.getTotalTasks();
 		int count = countFinishedTasks(db, jm);
-//System.out.println("analyzeJobTask -> Status:" + jm.getStatus().name() + " - jobs:" + jobs + " - count:" + count );
 		if (count == jobs){
 			logJobDetailStatus(db, jm.getJobid(), jm.getTable().getFullName(), JobStatus.FINISHED, jm.getJobnum(), "");
-			
-			//Slowed down on purpose since for some reason transaction is not being processed.
-			sleep();					
-			
-//			System.out.println("analyzeJobTask -> Counting Finished Jobs: " + JobLoggerHelper.countFinishedJobs(db, jm));
-
 			analyzeJobDetails(db, jm);
-		}
-	}
-
-	private static void sleep() {
-		try {
-		    Thread.sleep(500);
-		} catch(InterruptedException ex) {
-		    Thread.currentThread().interrupt();
 		}
 	}
 
 	private static void analyzeJobDetails(Database db, JobMessage jm) throws SQLException, DatabaseException {
 		int jobs = getNumOfJobs(db, jm.getJobid());
 		int count = countFinishedJobs(db, jm);
-
-		System.out.println("analyzeJobDetails -> Status:" + jm.getStatus().name() + " - jobs:" + jobs + " - count:" + count + "\n" + jm.toJson());
-
+		
 		if(count == jobs)
 			logEndOfJob(db, jm.getJobid());
 		
@@ -282,11 +290,26 @@ public class JobLoggerHelper {
 		ResultSet rs = null;
 		int count = 0;
 		String sql = "SELECT count(*) FROM syncdb.job_detail WHERE jobid='" + jm.getJobid() + "' and status = '" + JobStatus.FINISHED.name() + "'";
-		rs = db.prepareStatement(sql).executeQuery();
+		rs = db.prepareForwardStatement(sql).executeQuery();
 		if (rs.next())
 			count = rs.getInt(1);
 		rs.close();
 		return count;
 	}
 
+	public static List<Map<String,String>> getFinishedJobs(Database db, JobMessage jm) throws SQLException, DatabaseException{
+		ResultSet rs = null;
+		List<Map<String,String>> ret = new ArrayList<Map<String,String>>();
+		String sql = "SELECT \"table\", status FROM syncdb.job_detail WHERE jobid='" + jm.getJobid() + "'";
+		rs = db.prepareForwardStatement(sql).executeQuery();
+		while (rs.next()){
+			Map<String,String> m = new HashMap<String, String>();
+			m.put(rs.getString(1), rs.getString(2));
+			System.out.println(rs.getString(1) + " - " + rs.getString(2));
+			ret.add(m);
+		}
+		rs.close();
+		return ret;
+	}
+	
 }

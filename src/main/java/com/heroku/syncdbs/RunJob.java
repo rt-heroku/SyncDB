@@ -30,10 +30,11 @@ public class RunJob {
 			int jobnum = 0;
 
 			workerQ.connect(Settings.getWorkerQueueName());
-
+			
 			syncDB.connectBothDBs();
 
 			Database sourceDb = syncDB.getSource();
+			JobLoggerHelper.logJob(sourceDb, jobid, jt, user, JobStatus.CREATED, 0, chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
 
 			if (Settings.refreshViews())
 				syncDB.refreshMaterializedViews(sourceDb);
@@ -43,7 +44,7 @@ public class RunJob {
 			if (Settings.analyzeBeforeProcess())
 				tables = syncDB.analyzeTables(sourceDb, tables);
 
-			JobLoggerHelper.logJob(sourceDb, jobid, jt, user, JobStatus.CREATED, tables.size(), chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
+			JobLoggerHelper.logJobStatusAndTables(sourceDb, jobid, JobStatus.ANALYZED, tables.size());
 			
 			for (TableInfo table : tables) {
 				int maxid = table.getMaxid();
@@ -69,13 +70,7 @@ public class RunJob {
 					
 				}
 				logPublishingJob(numOfTasks, table);
-				
-				if (numOfTasks == 0){
-					JobLoggerHelper.logTask(sourceDb, jobid, 1, table.getFullName(), 0);
-					JobLoggerHelper.logTaskStatus(sourceDb, jobid, 1,table.getFullName(), JobStatus.FINISHED);
-					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getFullName(), JobStatus.FINISHED, jobnum, "NOTHING TO PROCESS, ORIGIN TABLE HAS 0 (zero) records and 0 (zero) tasks");
-				}else
-					JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getFullName(), JobStatus.SENT, jobnum, tasks.toString());
+				JobLoggerHelper.logJobDetailStatus(sourceDb, jobid, table.getFullName(), JobStatus.SENT, jobnum, tasks.toString());
 
 			}
 			JobLoggerHelper.logJobStatus(sourceDb,jobid, JobStatus.SENT);
@@ -98,7 +93,7 @@ public class RunJob {
 		int jobChunk = table.getMaxid();
 		int offset = 0;
 		
-		while (jobChunk > 0) {
+		while (jobChunk >= 0) {
 			JobMessage jm = new JobMessage();
 
 			jobChunk = jobChunk - chunk;
