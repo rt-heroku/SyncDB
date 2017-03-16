@@ -378,7 +378,7 @@ public abstract class Database {
 		ResultSet rs = null;
 		try {
 
-			sql = "SELECT \"schema\", object_name, \"type\", \"number_of_rows\", \"refresh\", \"analyze\", \"maxid\" FROM syncdb.objects_to_transfer WHERE resfresh = true";
+			sql = "SELECT \"schema\", object_name, \"type\", \"number_of_rows\", \"refresh\", \"analyze\", \"maxid\" FROM syncdb.objects_to_transfer WHERE refresh = true";
 			statementSrc = connection.prepareStatement(sql);
 			rs = statementSrc.executeQuery();
 
