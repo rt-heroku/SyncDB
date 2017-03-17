@@ -7,5 +7,6 @@ public enum JobStatus {
 	ANALYZED,
 	IGNORED, 
 	SENT,
-	PROCESSING
+	PROCESSING,
+	ANALYZING
 }

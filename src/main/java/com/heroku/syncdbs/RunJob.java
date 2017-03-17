@@ -34,7 +34,7 @@ public class RunJob {
 			syncDB.connectBothDBs();
 
 			Database sourceDb = syncDB.getSource();
-			JobLoggerHelper.logJob(sourceDb, jobid, jt, user, JobStatus.CREATED, 0, chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
+			JobLoggerHelper.logJob(sourceDb, jobid, jt, user, JobStatus.ANALYZING, 0, chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
 
 			if (Settings.refreshViews()){
 				System.out.println("Refreshing views is turned on, will find which ones to refresh");

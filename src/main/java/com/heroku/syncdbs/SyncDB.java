@@ -132,10 +132,10 @@ public class SyncDB {
 		System.out.println("This process will now refresh " + list.size() + " views.");
 		
 		for (TableInfo v : list){
-			System.out.print("Refreshing MATERIALIZED VIEW " + v.getFullName() + " ... ");
+			System.out.println("Refreshing MATERIALIZED VIEW " + v.getFullName() + " ... ");
 			db.refreshMaterializedView("", v.getFullName());
 			db.analyzeTable(v.getFullName());
-			System.out.println("Done!");
+			System.out.println("Finished refreshing " + v.getFullName() + " ... Done!");
 		}
 	}
 
@@ -146,10 +146,10 @@ public class SyncDB {
 
 		for (String v : list){
 			String view = schema + ".\"" + v + "\"";
-			System.out.print("Refreshing MATERIALIZED VIEW " + view + " ... ");
+			System.out.println("Refreshing MATERIALIZED VIEW " + view + " ... ");
 			db.refreshMaterializedView(schema, v);
 			db.analyzeTable(view);
-			System.out.println("Done!");
+			System.out.println("Finished refreshing " + view + " ... Done!");
 		}
 	}
 	protected void dropAndRecreateTableInTargetIfExists(TableInfo ti) throws Exception {
@@ -236,9 +236,12 @@ public class SyncDB {
 		System.out.println("This process will now analyze " + tables.size() + " objects.");
 
 		for (TableInfo t : tables){
-			System.out.print("ANALYZING "  + t.getType() + " " + t.getFullName() + " .... ");
+			System.out.println("ANALYZING "  + t.getType() + " " + t.getFullName() + " .... ");
+			
 			db.analyzeTable(t.getFullName());
 			updateMaxId(db, t);
+			
+			System.out.print("Finished ANALYZING "  + t.getType() + " " + t.getFullName() + " .... ");
 			if (t.getType().equals("VIEW"))
 				System.out.println("\tDone! - maxId = " + t.getMaxid());
 			else

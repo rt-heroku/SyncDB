@@ -165,10 +165,10 @@ public class DataMover {
 		for (TableInfo t : list) {
 			try {
 				if (!analyzed){
-					System.out.print("Getting Max ID for " + t.getFullName() + " ... ");
+					System.out.println("Getting Max ID for " + t.getFullName() + " ... ");
 					int maxid = getTableMaxId(db, t.getFullName());
 					t.setMaxid(maxid);
-					System.out.println("\tDone!");
+					System.out.println("Max ID for " + t.getFullName() + " = " + maxid + "\tDone!");
 				}
 				ts.add(t);
 			} catch (DatabaseException e) {
