@@ -23,7 +23,20 @@ public class RunJob {
 	}
 	
 	public void runJob(JobType jt, String user) throws Exception{
-		SyncDB syncDB = new SyncDB();
+		final SyncDB syncDB = new SyncDB();
+		
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+	        @Override
+	            public void run() {
+	        		try {
+						syncDB.closeBothConnections();
+						System.out.println("Shuting down QWorker!");
+					} catch (Exception e) {
+						e.printStackTrace();
+					}	
+	            }   
+	    }); 
+
 		try {
 			String jobid = UUID.randomUUID().toString();
 			int chunk = getChunkSize(100000);
@@ -36,15 +49,19 @@ public class RunJob {
 			Database sourceDb = syncDB.getSource();
 			JobLoggerHelper.logJob(sourceDb, jobid, jt, user, JobStatus.CREATED, 0, chunk, syncDB.getSourceDatabase(), syncDB.getTargetDatabase());
 
-			if (Settings.refreshViews())
+			if (Settings.refreshViews()){
+				System.out.println("Refreshing views is turned on, will find which ones to refresh");
 				syncDB.refreshMaterializedViews(sourceDb);
-			
+			}
+
 			List<TableInfo> tables = syncDB.getTablesToMoveFromSourceAndGetTheMaxId();
 			
 			if (Settings.analyzeBeforeProcess())
 				tables = syncDB.analyzeTables(sourceDb, tables);
 
 			JobLoggerHelper.logJobStatusAndTables(sourceDb, jobid, JobStatus.ANALYZED, tables.size());
+			
+			System.out.println("Found [" + tables.size() + "] objects to transfer ... Beginning creation of Jobs for all tables with " + Settings.getChunkSize() + " chunks of rows." );
 			
 			for (TableInfo table : tables) {
 				int maxid = table.getMaxid();
@@ -120,12 +137,12 @@ public class RunJob {
 	}
 
 	private static void logPublishingJobItem(int jobnum, JobMessage o) {
-		System.out.println("MANUALLY Publishing task number[" + o.getTasknum() + "] of " + jobnum + " tasks for TABLE[" + o.getTable().getFullName()
+		System.out.println("Publishing task number[" + o.getTasknum() + "] of " + jobnum + " tasks for TABLE[" + o.getTable().getFullName()
 				+ "] with total " + o.getMaxid() + " rows - OFFSET: " + o.getOffset() + " - CHUNK: " + o.getChunk());
 	}
 
 	private static void logPublishingJob(int jobnum, TableInfo o) {
-		System.out.println("MANUALLY Publishing " + jobnum + " tasks for TABLE[" + o.getFullName()
+		System.out.println("Publishing " + jobnum + " tasks for TABLE[" + o.getFullName()
 		+ "] with max row id = " + o.getMaxid() + " - CHUNK: " + Settings.getChunkSize());
 	}
 

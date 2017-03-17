@@ -112,11 +112,14 @@ public class SyncDB {
 			validateConnection("target");
 			validateConnection("source");
 			
-			if (Settings.useViewInventory())
+			if (Settings.useViewInventory()){
+				System.out.println("Refresh views will use list from inventory table");
 				refreshViewsSetInViewInventory(db);
-			else
+			}
+			else{
+				System.out.println("Refresh views will use list from Heroku Settings variable");
 				refreshViewsSetInVariable(db, views, schema);
-			
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
@@ -125,6 +128,8 @@ public class SyncDB {
 
 	private void refreshViewsSetInViewInventory(Database db) throws DatabaseException {
 		Collection<TableInfo> list = db.getViewstoRefreshFromViewInventory();
+		
+		System.out.println("This process will now refresh " + list.size() + " views.");
 		
 		for (TableInfo v : list){
 			System.out.print("Refreshing MATERIALIZED VIEW " + v.getFullName() + " ... ");
@@ -137,6 +142,8 @@ public class SyncDB {
 	private void refreshViewsSetInVariable(Database db, String views, String schema) throws DatabaseException {
 		Collection<String> list = Arrays.asList(views.split("\\;"));
 		
+		System.out.println("This process will now refresh " + list.size() + " views.");
+
 		for (String v : list){
 			String view = schema + ".\"" + v + "\"";
 			System.out.print("Refreshing MATERIALIZED VIEW " + view + " ... ");
@@ -223,6 +230,9 @@ public class SyncDB {
 	}
 
 	public List<TableInfo> analyzeTables(Database db, List<TableInfo> tables) throws Exception {
+
+		System.out.println("This process will now analyze " + tables.size() + " objects.");
+
 		for (TableInfo t : tables){
 			System.out.print("ANALYZING "  + t.getType() + " " + t.getFullName() + " .... ");
 			db.analyzeTable(t.getFullName());

@@ -63,8 +63,8 @@ public class QWorker {
 	protected void logEndMessage(long t1, JobMessage jm) {
 		String logmsg;
 		long seconds = (System.currentTimeMillis() - t1) / 1000;
-		logmsg = "QWorker ENDED     [" + getCurrentTime() + "] Job ID [" + jm.getJobid() + "] (" + jm.getTasknum()
-				+ " of " + jm.getTotalTasks() + ") in [" + seconds + "] seconds for table [" + jm.getTable().getFullName() + "] !";
+		logmsg = "QWorker Finished [" + getCurrentTime() + "] Job ID [" + jm.getJobid() + "] (" + jm.getTasknum()
+				+ " of " + jm.getTotalTasks() + ") in [" + seconds + "] seconds for table [" + jm.getTable().getFullName() + "]";
 		System.out.println(logmsg);
 	}
 

@@ -113,19 +113,17 @@ public class DataMover {
 		try {
 			sql = target.generateDropTableSQLStatement(toSchema, table.getName());
 			target.execute(sql);
-			if (isDebugEnabled()){
-				System.out.println("TABLE DROPPED: " + table.getFullName());
+			System.out.println("TABLE DROPPED: " + table.getFullName());
+			if (isDebugEnabled())
 				System.out.println("DEBUG - " + sql);
-			}
 
 		} catch (Exception e) {
 			System.out.println("Error while deleting table - " + e.getMessage());
 		}
 		sql = source.generateCreateTableSQLStatement(toSchema, table);
-		if (isDebugEnabled()){
-			System.out.println("CREATING TABLE " + table.getName());
+		System.out.println("CREATING TABLE " + toSchema + "." + table.getName());
+		if (isDebugEnabled())
 			System.out.println("DEBUG - execute in target: " + sql);
-		}
 		target.execute(sql);
 	}
 
@@ -152,17 +150,25 @@ public class DataMover {
 	}
 
 	public synchronized List<TableInfo> getListOfTableNamesAndMaxId(Database db, String schema, boolean analyzed) throws Exception {
+		
 		List<TableInfo> ts = new ArrayList<TableInfo>();
 		Collection<TableInfo> list = null;
-		if (Settings.useViewInventory())
+		
+		if (Settings.useViewInventory()){
+			System.out.println("Reading list of table from Inventory table");
 			list = db.getListTablesFromInventory(analyzed);
-		else
+		}else{
+			System.out.println("Reading list of table from database metadata");
 			list = db.listTables(schema);
+		}
+		
 		for (TableInfo t : list) {
 			try {
 				if (!analyzed){
+					System.out.print("Getting Max ID for " + t.getFullName() + " ... ");
 					int maxid = getTableMaxId(db, t.getFullName());
 					t.setMaxid(maxid);
+					System.out.println("\tDone!");
 				}
 				ts.add(t);
 			} catch (DatabaseException e) {

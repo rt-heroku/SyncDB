@@ -8,17 +8,31 @@ import com.rabbitmq.client.QueueingConsumer;
 
 public class LogWorker {
 	private QueueManager logQ = new QueueManager();
+	private SyncDB syncDB;
 
 	public LogWorker() {
 	}
 
 	public static void main(String[] args) throws Exception {
-		LogWorker q = new LogWorker();
+		final LogWorker q = new LogWorker();
+		q.syncDB = new SyncDB();
+
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+	        @Override
+	            public void run() {
+	        		try {
+						q.syncDB.closeBothConnections();
+						System.out.println("Shuting down Log Worker!");
+					} catch (Exception e) {
+						e.printStackTrace();
+					}	
+	            }   
+	    }); 
+		
 		q.run();
 	}
 
 	public void run() throws Exception {
-		SyncDB syncDB = new SyncDB();
 		syncDB.connectBothDBs();
 
 		logQ.connect(Settings.getLogQueueName());
@@ -52,8 +66,8 @@ public class LogWorker {
 	protected void logEndMessage(long t1, JobMessage jm) {
 		String logmsg;
 		long seconds = (System.currentTimeMillis() - t1) / 1000;
-		logmsg = "LogWorker ENDED     [" + getCurrentTime() + "] Job ID [" + jm.getJobid() + "] (" + jm.getTasknum()
-				+ " of " + jm.getTotalTasks() + ") in [" + seconds + "] seconds for table [" + jm.getTable() + "] !";
+		logmsg = "LogWorker Finished  [" + getCurrentTime() + "] Job ID [" + jm.getJobid() + "] (" + jm.getTasknum()
+				+ " of " + jm.getTotalTasks() + ") in [" + seconds + "] seconds for table [" + jm.getTable() + "]";
 		System.out.println(logmsg);
 	}
 }
