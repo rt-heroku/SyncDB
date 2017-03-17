@@ -9,17 +9,31 @@ import com.rabbitmq.client.QueueingConsumer;
 public class QWorker {
 	private QueueManager workerQ = new QueueManager();
 	private QueueManager logQ = new QueueManager();
+	private SyncDB syncDB;
 	
 	public QWorker() throws Exception {
 	}
 
 	public static void main(String[] args) throws Exception {
-		QWorker q = new QWorker();
+		final QWorker q = new QWorker();
+		q.syncDB = new SyncDB();
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+	        @Override
+	            public void run() {
+	        		try {
+	        			System.out.println("Shuting down QWorker!");
+						q.syncDB.closeBothConnections();
+						q.logQ.close();
+						q.workerQ.close();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}	
+	            }   
+	    }); 
 		q.run();
 	}
 
 	public void run() throws Exception {
-		SyncDB syncDB = new SyncDB();
 		syncDB.connectBothDBs();
 		
 		workerQ.connect(Settings.getWorkerQueueName());

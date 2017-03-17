@@ -214,11 +214,13 @@ public class SyncDB {
 	}
 	
 	protected void closeConnectionToSource() throws Exception{
-		getSource().close();
+		if (!getSource().getConnection().isClosed())
+			getSource().close();
 	}
 
 	protected void closeConnectionToTarget() throws Exception{
-		getTarget().close();
+		if (!getTarget().getConnection().isClosed())
+			getTarget().close();
 	}
 	
 	public String getFromSchema(){

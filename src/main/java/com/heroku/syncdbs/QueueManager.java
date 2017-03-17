@@ -29,6 +29,10 @@ public class QueueManager {
 		this.setQName(qName);
 	}
 
+	public void disconnect() throws Exception {
+		connection.close();
+	}
+	
 	private Channel getQChannel() throws Exception {
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setUri(Settings.getQueueUrl());

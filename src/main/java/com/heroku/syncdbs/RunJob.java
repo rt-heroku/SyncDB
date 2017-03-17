@@ -23,20 +23,7 @@ public class RunJob {
 	}
 	
 	public void runJob(JobType jt, String user) throws Exception{
-		final SyncDB syncDB = new SyncDB();
-		
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-	        @Override
-	            public void run() {
-	        		try {
-						syncDB.closeBothConnections();
-						System.out.println("Shuting down QWorker!");
-					} catch (Exception e) {
-						e.printStackTrace();
-					}	
-	            }   
-	    }); 
-
+		SyncDB syncDB = new SyncDB();
 		try {
 			String jobid = UUID.randomUUID().toString();
 			int chunk = getChunkSize(100000);
