@@ -25,10 +25,11 @@ public class QWorker {
 	        		try {
 	        			System.out.println("Shuting down QWorker!");
 	        			q.shutdown = true;
-	        			if (!q.running)
+	        			if (!q.running){
 	        				q.syncDB.closeBothConnections();
-						q.logQ.close();
-						q.workerQ.close();
+	        				q.logQ.close();
+	        				q.workerQ.close();
+						}
 					} catch (Exception e) {
 						e.printStackTrace();
 					}	
@@ -68,8 +69,11 @@ public class QWorker {
 
 					running = false;
 					
-					if (shutdown)
+					if (shutdown){
 						syncDB.closeBothConnections();
+						logQ.disconnect();
+						workerQ.disconnect();
+					}
 				}
 			}
 		} catch (Exception e) {
