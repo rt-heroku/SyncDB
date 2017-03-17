@@ -10,6 +10,8 @@ public class QWorker {
 	private QueueManager workerQ = new QueueManager();
 	private QueueManager logQ = new QueueManager();
 	private SyncDB syncDB;
+	private boolean shutdown = false;
+	private boolean running = false;
 	
 	public QWorker() throws Exception {
 	}
@@ -22,7 +24,9 @@ public class QWorker {
 	            public void run() {
 	        		try {
 	        			System.out.println("Shuting down QWorker!");
-						q.syncDB.closeBothConnections();
+	        			q.shutdown = true;
+	        			if (!q.running)
+	        				q.syncDB.closeBothConnections();
 						q.logQ.close();
 						q.workerQ.close();
 					} catch (Exception e) {
@@ -46,6 +50,8 @@ public class QWorker {
 					long t1 = System.currentTimeMillis();
 					JobMessage jm = workerQ.parseJsonMessage(delivery.getBody());
 
+					running = true;
+					
 					jm.setStatus(JobStatus.PROCESSING);
 					logQ.sendMessage(jm);
 					
@@ -59,6 +65,11 @@ public class QWorker {
 					
 					jm.setStatus(JobStatus.FINISHED);
 					logQ.sendMessage(jm);
+
+					running = false;
+					
+					if (shutdown)
+						syncDB.closeBothConnections();
 				}
 			}
 		} catch (Exception e) {

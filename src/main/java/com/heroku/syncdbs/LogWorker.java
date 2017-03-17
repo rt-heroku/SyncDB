@@ -9,7 +9,9 @@ import com.rabbitmq.client.QueueingConsumer;
 public class LogWorker {
 	private QueueManager logQ = new QueueManager();
 	private SyncDB syncDB;
-
+	private boolean shutdown = false;
+	private boolean running = false;
+	
 	public LogWorker() {
 	}
 
@@ -21,8 +23,10 @@ public class LogWorker {
 	        @Override
 	            public void run() {
 	        		try {
-						q.syncDB.closeBothConnections();
-						System.out.println("Shuting down Log Worker!");
+	        			System.out.println("Shuting down Log Worker!");
+	        			q.shutdown = true;
+	        			if (!q.running)
+	        				q.syncDB.closeBothConnections();
 					} catch (Exception e) {
 						e.printStackTrace();
 					}	
@@ -41,6 +45,7 @@ public class LogWorker {
 			while (true) {
 				QueueingConsumer.Delivery delivery = logQ.nextDelivery();
 				if (delivery != null) {
+					running = true;
 					long t1 = System.currentTimeMillis();
 					JobMessage jm = logQ.parseJsonMessage(delivery.getBody());
 					JobLoggerHelper.logTaskStatus(syncDB.getSource(), jm.getJobid(), jm.getTasknum(), jm.getTable().getFullName(), jm.getStatus());
@@ -50,6 +55,12 @@ public class LogWorker {
 						JobLoggerHelper.analyzeJobTask(syncDB.getSource(), jm);
 					
 					logEndMessage(t1, jm);
+					
+					running = false;
+					
+					if (shutdown)
+						syncDB.closeBothConnections();
+					
 				}
 			}
 		} catch (Exception e) {
